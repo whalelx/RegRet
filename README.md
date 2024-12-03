@@ -13,7 +13,7 @@ If you use this code and data for your research or project, please cite:
 @article{liu2024lamra,
   title={LamRA: Large Multimodal Model as Your Advanced Retrieval Assistant},
   author={Yikun Liu and Pingan Chen and Jiayin Cai and Xiaolong Jiang and Yao Hu and Jiangchao Yao and Yanfeng Wang and Weidi Xie},
-  journal={arXiv preprint arXiv:2412.01720}
+  journal={arXiv preprint arXiv:2412.01720},
   year={2024}
 }
 ```
