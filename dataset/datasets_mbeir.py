@@ -314,7 +314,7 @@ class CandidateDataset(Dataset):
         cand_txt = mbeir_cand_pool_entry.get("txt") or ""
         cand_txt = format_string(f"{cand_txt}")
         cand_modality = mbeir_cand_pool_entry.get("modality", None)
-        if img is not None and cand_txt is not None:
+        if img is not None and cand_txt != '':
             instance = {
                 "txt": cand_txt,
                 "image": img, 
