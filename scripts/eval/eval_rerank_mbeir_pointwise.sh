@@ -1,5 +1,6 @@
 ORIGINAL_MODEL_ID="./checkpoints/hf_models/Qwen2-VL-7B-Instruct"
 MODEL_ID="path_to_LamRA_Rank"
+IMAGE_PATH_PREFIX=./data/M-BEIR
 
 # TASK_NAME=visualnews_task0
 # CUDA_VISIBLE_DEVICES='0,1,2,3,4,5,6,7' accelerate launch --multi_gpu --main_process_port 29508 eval/eval_mbeir_rerank_pointwise.py \
@@ -11,6 +12,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=mscoco_task0
@@ -23,6 +25,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=fashion200k_task0
@@ -35,6 +38,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 
@@ -48,6 +52,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=edis_task2
@@ -60,6 +65,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=webqa_task2
@@ -72,6 +78,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=visualnews_task3
@@ -84,6 +91,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=mscoco_task3
@@ -96,6 +104,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=fashion200k_task3
@@ -108,6 +117,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=nights_task4
@@ -120,6 +130,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=oven_task6
@@ -132,6 +143,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=infoseek_task6
@@ -144,6 +156,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=fashioniq_task7
@@ -156,6 +169,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=cirr_task7
@@ -168,6 +182,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=oven_task8
@@ -180,6 +195,7 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 
 # TASK_NAME=infoseek_task8
@@ -192,5 +208,6 @@ MODEL_ID="path_to_LamRA_Rank"
 #     --ret_query_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_query_names.json \
 #     --ret_cand_data_path ./LamRA_Ret_eval_results/mbeir_${TASK_NAME}_test_qwen2-vl-7b_LamRA-Ret_cand_names.json \
 #     --rank_num 50 \
+#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
 #     --save_name ${TASK_NAME}_top50
 

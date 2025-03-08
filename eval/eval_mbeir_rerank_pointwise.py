@@ -41,7 +41,7 @@ def rerank(args):
 
     model = model.to(device)
 
-    dataset = LazySupervisedDataset(query_data_path, cand_pool_path, instructions_path, ret_query_data_path, ret_cand_data_path, rank_num=rank_num)
+    dataset = LazySupervisedDataset(query_data_path, cand_pool_path, instructions_path, ret_query_data_path, ret_cand_data_path, image_path_prefix=args.image_path_prefix, rank_num=rank_num)
     data_collator = EvalRerankDataCollator(tokenizer=tokenizer, processor=processor)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, num_workers=8, shuffle=False, collate_fn=data_collator)
 
@@ -126,6 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('--rank_num', type=int, default=50)
     parser.add_argument('--save_name', type=str)
     parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--image_path_prefix', type=str)
 
     args = parser.parse_args()
     rerank(args)

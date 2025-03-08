@@ -95,12 +95,14 @@ def eval(args):
         query_data_path=args.query_data_path, 
         cand_pool_path=args.query_cand_pool_path,
         instructions_path=args.instructions_path,
+        image_path_prefix=args.image_path_prefix
     )
 
     cand_dataset = CandidateDataset(
         query_data_path=args.query_data_path, 
         cand_pool_path=args.cand_pool_path,
         instructions_path=args.instructions_path,
+        image_path_prefix=args.image_path_prefix
     )
 
     query_data_collator = MbeirQueryDataCollator(tokenizer=tokenizer, processor=processor)
@@ -227,6 +229,7 @@ if __name__ == "__main__":
     parser.add_argument('--original_model_id', type=str)
     parser.add_argument('--model_id', type=str)
     parser.add_argument('--query_cand_pool_path', type=str)
+    parser.add_argument('--image_path_prefix', type=str)
 
     args = parser.parse_args()
     eval(args)
