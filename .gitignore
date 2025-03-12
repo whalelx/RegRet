@@ -1,5 +1,4 @@
 checkpoints/
-*.json
 *.txt
 !requirements.txt
 *.pth
@@ -12,3 +11,4 @@ zeroshot_retrieval_eval_results/
 LamRA_Ret_eval_results/
 checkpoints/ 
 rerank_training_data/
+mbeir_rerank_files/
