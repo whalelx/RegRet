@@ -17,6 +17,9 @@ pip install ninja
 pip install flash-attn --no-build-isolation
 ```
 
+## New Version
+We have updated the version of Qwen2.5-VL in the `qwen2.5vl` branch.
+
 ## Quickstart
 Please refer to the `demo.py`
 
