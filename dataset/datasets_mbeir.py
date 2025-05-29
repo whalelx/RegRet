@@ -156,7 +156,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image']},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -187,7 +187,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image']},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -220,15 +220,14 @@ class QueryDataset(Dataset):
         query_txt_with_prompt = format_string(f"{query_prompt} {query_txt}")
         query_txt_without_prompt = format_string(f"{query_txt}")
 
-        query = _prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix)
-        # query = _prepare_data_dict(query_txt_without_prompt, query_img_path, image_path_prefix)
-        instance = {"query": query}
-        instance['query']['qid'] = hash_qid(qid)
-        return instance 
+        instance = _prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix)
+        # instance = _prepare_data_dict(query_txt_without_prompt, query_img_path, image_path_prefix)
+        instance['qid'] = hash_qid(qid)
+        instance.update({"box": pos_cand.get("box", None)})
+        return instance
 
     def __getitem__(self, i):
-        instance = self.get_instance(i)
-        query = instance['query']
+        query = self.get_instance(i)
         qid = query['qid']
         query_message = self.construct_messages(query)
         
@@ -262,7 +261,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image']},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -293,7 +292,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image']},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -331,6 +330,7 @@ class CandidateDataset(Dataset):
                 "modality": cand_modality,
             }
         instance.update({"did": hash_did(did)})
+        instance.update({"box": mbeir_cand_pool_entry.get("box", None)})
         return instance 
     
 

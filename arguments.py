@@ -46,6 +46,12 @@ class DataArguments:
     cand_pool_path: str = field(
         default=None, metadata={"help": "Path to the cand pool data json file."}
     )
+    xhs_query_data_path: str = field(
+        default=None, metadata={"help": "Path to the query data json file."}
+    )
+    xhs_cand_pool_path: str = field(
+        default=None, metadata={"help": "Path to the cand pool data json file."}
+    )
     instructions_path: str = field(
         default=None, metadata={"help": "Path to the instructions data json file."}
     )
