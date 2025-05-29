@@ -1,11 +1,11 @@
-from typing import Tuple, Optional, List, Union 
-import torch 
+from typing import Tuple, Optional, List, Union
+import torch
 from transformers.utils import logging
 
 logger = logging.get_logger(__name__)
 
 from transformers import Qwen2_5_VLForConditionalGeneration
-from torch import nn 
+from torch import nn
 import torch.distributed as dist
 from transformers.modeling_outputs import SequenceClassifierOutput
 import torch.nn.functional as F
@@ -24,6 +24,15 @@ class Similarity(nn.Module):
         return self.cos(x, y) / self.temp
 
 class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.emb_head = nn.Linear(config.hidden_size, config.hidden_size, bias=True)
+        self._init_embhead_weights()
+
+    def _init_embhead_weights(self):
+        nn.init.constant_(self.emb_head.weight, 0)
+        nn.init.constant_(self.emb_head.bias, 0)
 
     def forward(
         self,
@@ -48,7 +57,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         has_hard_negative=False,
         qids=None,
         dids=None,
-        ids=None 
+        ids=None
     ):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -143,67 +152,94 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
         hidden_states = outputs[0]
 
-        if has_hard_negative:
-            batch_size = len(hidden_states) // 3
-        elif not inference:
-            batch_size = len(hidden_states) // 2
-        elif inference:
-            batch_size = len(hidden_states)
-
-        if inference:
-            assert batch_size == len(hidden_states)
-
         embed_index = self.config.emb_token_ids[0]
-        embed_indices = torch.argmax((labels == embed_index).int(), dim=1) 
-        embed_features = hidden_states[torch.arange(len(embed_indices)), embed_indices - 1] # (batch_size, embed_dim)
-
-        if inference:
-            if ids is not None:
-                return embed_features, ids 
-            elif qids is not None or dids is not None:
-                return embed_features, qids, dids 
-            return embed_features 
-        if has_hard_negative:
-            embed1, embed2, embed3 = embed_features[:batch_size], embed_features[batch_size:2*batch_size], embed_features[2*batch_size:]
-        else:
-            embed1, embed2 = embed_features[:batch_size], embed_features[batch_size:]
-        loss_fct = nn.CrossEntropyLoss()
-
-        if dist.is_initialized():
-            if has_hard_negative:
-                embed3_list = [torch.zeros_like(embed3) for _ in range(dist.get_world_size())]
-                dist.all_gather(tensor_list=embed3_list, tensor=embed3.contiguous())
-                embed3_list[dist.get_rank()] = embed3 
-                embed3 = torch.cat(embed3_list, 0)
-            
-            # Dummy vectors for allgather
-            embed1_list = [torch.zeros_like(embed1) for _ in range(dist.get_world_size())]
-            embed2_list = [torch.zeros_like(embed2) for _ in range(dist.get_world_size())]
-            # Allgather
-            dist.all_gather(tensor_list=embed1_list, tensor=embed1.contiguous())
-            dist.all_gather(tensor_list=embed2_list, tensor=embed2.contiguous())
-
-            # Since allgather results do not have gradients, we replace the
-            # current process's corresponding embeddings with original tensors
-            embed1_list[dist.get_rank()] = embed1
-            embed2_list[dist.get_rank()] = embed2
-            # Get full batch embeddings: (bs x N, hidden)
-            embed1 = torch.cat(embed1_list, 0)
-            embed2 = torch.cat(embed2_list, 0)
-
-        sim = Similarity(temp=0.05)
-
-        # add normalization
-        embed1 = F.normalize(embed1, dim=-1)
-        embed2 = F.normalize(embed2, dim=-1)
-
-        cos_sim = sim(embed1.unsqueeze(1), embed2.unsqueeze(0))
-
-        if has_hard_negative:
-            embed1_embed3_cos = sim(embed1.unsqueeze(1), embed3.unsqueeze(0))
-            cos_sim = torch.cat([cos_sim, embed1_embed3_cos], 1)
         
-        nce_labels = torch.arange(cos_sim.size(0)).long().to(cos_sim.device)
+        # language generation
+        language_loss = None
+        language_indices = torch.where((labels != embed_index).all(1))[0]
+        if language_indices is not None and len(language_indices) > 0:
+            logits = self.lm_head(hidden_states[language_indices])
+            if labels is not None:
+                language_loss = self.loss_function(logits=logits, labels=labels[language_indices], vocab_size=self.config.vocab_size)
 
-        loss = loss_fct(cos_sim, nce_labels)
-        return SequenceClassifierOutput(loss=loss)
+        # contrastive learning
+        contrastive_loss = None
+        contrastive_indices = torch.where(labels == embed_index)[0]
+
+        contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
+        contrastive_labels = labels[contrastive_indices] if labels is not None else None
+
+        if has_hard_negative:
+            contrastive_batch_size = len(contrastive_hidden_states) // 3
+        elif not inference:
+            contrastive_batch_size = len(contrastive_hidden_states) // 2
+        elif inference:
+            contrastive_batch_size = len(contrastive_hidden_states)
+
+        if contrastive_labels is not None:
+            embed_indices = torch.argmax((contrastive_labels == embed_index).int(), dim=1)
+            embed_features = contrastive_hidden_states[torch.arange(len(embed_indices)), embed_indices - 1] # (batch_size, embed_dim)
+
+            if inference:
+                if ids is not None:
+                    return embed_features, ids
+                elif qids is not None or dids is not None:
+                    return embed_features, qids, dids
+                return embed_features
+
+            if has_hard_negative:
+                embed1, embed2, embed3 = embed_features[:contrastive_batch_size], embed_features[contrastive_batch_size:2*contrastive_batch_size], embed_features[2*contrastive_batch_size:]
+            else:
+                embed1, embed2 = embed_features[:contrastive_batch_size], embed_features[contrastive_batch_size:]
+
+            loss_fct = nn.CrossEntropyLoss()
+
+            if dist.is_initialized():
+                if has_hard_negative:
+                    embed3_list = [torch.zeros_like(embed3) for _ in range(dist.get_world_size())]
+                    dist.all_gather(tensor_list=embed3_list, tensor=embed3.contiguous())
+                    embed3_list[dist.get_rank()] = embed3
+                    embed3 = torch.cat(embed3_list, 0)
+
+                # Dummy vectors for allgather
+                embed1_list = [torch.zeros_like(embed1) for _ in range(dist.get_world_size())]
+                embed2_list = [torch.zeros_like(embed2) for _ in range(dist.get_world_size())]
+                # Allgather
+                dist.all_gather(tensor_list=embed1_list, tensor=embed1.contiguous())
+                dist.all_gather(tensor_list=embed2_list, tensor=embed2.contiguous())
+
+                # Since allgather results do not have gradients, we replace the
+                # current process's corresponding embeddings with original tensors
+                embed1_list[dist.get_rank()] = embed1
+                embed2_list[dist.get_rank()] = embed2
+                # Get full batch embeddings: (bs x N, hidden)
+                embed1 = torch.cat(embed1_list, 0)
+                embed2 = torch.cat(embed2_list, 0)
+
+            sim = Similarity(temp=0.05)
+
+            # add normalization
+            embed1 = F.normalize(embed1, dim=-1)
+            embed2 = F.normalize(embed2, dim=-1)
+
+            cos_sim = sim(embed1.unsqueeze(1), embed2.unsqueeze(0))
+
+            if has_hard_negative:
+                embed3 = F.normalize(embed3, dim=-1)
+                embed1_embed3_cos = sim(embed1.unsqueeze(1), embed3.unsqueeze(0))
+                cos_sim = torch.cat([cos_sim, embed1_embed3_cos], 1)
+
+            nce_labels = torch.arange(cos_sim.size(0)).long().to(cos_sim.device)
+            contrastive_loss = loss_fct(cos_sim, nce_labels)
+
+        # Combine losses
+        if language_loss is not None and contrastive_loss is not None:
+            total_loss = language_loss + contrastive_loss
+        elif language_loss is not None:
+            total_loss = language_loss
+        elif contrastive_loss is not None:
+            total_loss = contrastive_loss
+        else:
+            total_loss = None
+
+        return SequenceClassifierOutput(loss=total_loss)
