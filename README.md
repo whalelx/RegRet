@@ -1,4 +1,4 @@
-# LamRA: Large Multimodal Model as Your Advanced Retrieval Assistant
+# LEMUR: Leveraging Multimodal Embeddings for Fine-Grained Information Retrieval
 
 This repository is the official implementation of LamRA.
 

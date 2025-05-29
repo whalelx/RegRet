@@ -14,7 +14,7 @@ import requests
 import torch
 import torchvision
 from packaging import version
-from PIL import Image
+from PIL import Image, ImageDraw
 from torchvision import io, transforms
 from torchvision.transforms import InterpolationMode
 from typing import Optional
@@ -99,7 +99,7 @@ def to_rgb(pil_image: Image.Image) -> Image.Image:
           return pil_image.convert("RGB")
 
 
-def fetch_image(ele: dict[str, str | Image.Image], size_factor: int = IMAGE_FACTOR) -> Image.Image:
+def fetch_image(ele: dict[str, str | Image.Image], size_factor: int = IMAGE_FACTOR, box_op: str = "draw") -> Image.Image:
     if "image" in ele:
         image = ele["image"]
     else:
@@ -122,6 +122,28 @@ def fetch_image(ele: dict[str, str | Image.Image], size_factor: int = IMAGE_FACT
     if image_obj is None:
         raise ValueError(f"Unrecognized image input, support local path, http url, base64 and PIL.Image, got {image}")
     image = to_rgb(image_obj)
+    if "box" in ele:
+        if ele["box"] is None: pass
+        else:
+            width, height = image.size
+            x0 = width * ele["box"][0]
+            y0 = height * ele["box"][1]
+            x1 = width * ele["box"][2]
+            y1 = height * ele["box"][3]
+
+            if box_op == "crop":
+                image = image.crop((x0, y0, x1, y1))
+            elif box_op == "draw":
+                draw = ImageDraw.Draw(image)
+                # (x0, y0) is top-left, (x1, y1) is bottom-right
+                if ele["box"] is not None:
+                    line_thickness = max(2, int(min(width, height) * 0.01))
+                    draw.rectangle(
+                        [(x0, y0), (x1, y1)], 
+                        outline="red", 
+                        width=line_thickness
+                    )
+
     ## resize
     if "resized_height" in ele and "resized_width" in ele:
         resized_height, resized_width = smart_resize(
