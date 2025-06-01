@@ -149,6 +149,8 @@ def train():
 
     # lora preparation
     llm_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm"]
+    llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
+
     if not (lora_args.use_lora or (training_args.train_vision_encoder and lora_args.use_vision_lora)):
         rank0_print("No LoRA enabled...")        
     else:
@@ -174,6 +176,10 @@ def train():
             rank0_print("Vision projector will be fully trained...")
             full_modules.extend(vision_projector_keys)
         
+        # Always fully train the embedding head for contrastive learning
+        rank0_print("Embedding/Language head will be fully trained...")
+        full_modules.extend(llm_heads_keys)
+
         lora_config = LoraConfig(
             r=lora_args.lora_r,
             lora_alpha=lora_args.lora_alpha,
