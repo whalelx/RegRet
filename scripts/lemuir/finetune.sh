@@ -21,8 +21,9 @@ DISTRIBUTED_ARGS="
 
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=qwen2_5-vl-7b                                 
-IMAGE_PATH_PREFIX=/mnt/tidal-alsh01/dataset/mmeb/M-BEIR
+MODEL_ID=qwen2_5-vl-7b
+DATASET_PATH=/mnt/tidal-alsh01/dataset/mmeb                              
+IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
@@ -52,9 +53,9 @@ torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --query_data_path $QUERY_DATA_PATH \
     --cand_pool_path $CAND_POOL_PATH \
     --instructions_path $INSTRUCTIONS_PATH \
-    --xhs_query_data_path /mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/train/mbeir_xhsnote_task7_train.jsonl \
-    --xhs_cand_pool_path /mnt/tidal-alsh01/dataset/mmeb/M-BEIR/cand_pool/local/mbeir_xhsnote_task7_cand_pool.jsonl \
-    --dam_data_path /mnt/tidal-alsh01/dataset/mmeb/describe-anything-data \
+    --xhs_query_data_path ${DATASET_PATH}/M-BEIR/query/train/mbeir_xhsnote_task7_train.jsonl \
+    --xhs_cand_pool_path ${DATASET_PATH}/M-BEIR/cand_pool/local/mbeir_xhsnote_task7_cand_pool.jsonl \
+    --dam_data_path ${DATASET_PATH}/describe-anything-data \
     --output_dir ./checkpoints/$RUN_ID \
     --report_to tensorboard \
     --run_name $RUN_ID \

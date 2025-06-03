@@ -18,7 +18,8 @@ class LazySupervisedDataset(Dataset):
         cand_pool_path: str, 
         instructions_path: str,
         image_path_prefix: str,
-        tokenizer = None 
+        tokenizer = None,
+        max_length = None
     ) -> None:
         super(LazySupervisedDataset, self).__init__()
         self.query_data = _load_query_data(query_data_path)
@@ -26,10 +27,12 @@ class LazySupervisedDataset(Dataset):
         self.query_instructions = _load_query_instructions(instructions_path)
         self.tokenizer = tokenizer 
         self.image_path_prefix = image_path_prefix 
+        self.max_length = max_length
 
     def __len__(self) -> int:
+        if self.max_length is not None:
+            return self.max_length
         return len(self.query_data)
-
     
     def construct_messages(self, data_dict):
         if 'txt' in data_dict and 'image' in data_dict:

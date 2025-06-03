@@ -52,6 +52,12 @@ class DataArguments:
     xhs_cand_pool_path: str = field(
         default=None, metadata={"help": "Path to the cand pool data json file."}
     )
+    dam_data_path: str = field(
+        default=None, metadata={"help": "Path to the dam data."}
+    )
+    dam_max_samples: str = field(
+        default=200000, metadata={"help": "Maximum number of samples to use from the dam data."}
+    )
     instructions_path: str = field(
         default=None, metadata={"help": "Path to the instructions data json file."}
     )

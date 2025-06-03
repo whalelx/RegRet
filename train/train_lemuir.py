@@ -13,7 +13,8 @@ from accelerate.utils import DistributedType
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import torch
 import transformers
-from transformers import Trainer, is_datasets_available, datasets
+from transformers import Trainer, is_datasets_available
+import datasets
 from transformers.integrations import deepspeed
 from transformers.trainer import LengthGroupedSampler, has_length
 from torch.utils.data import Dataset, ConcatDataset, WeightedRandomSampler, RandomSampler
@@ -32,44 +33,20 @@ from utils import (
     get_peft_state_maybe_zero_3
 )
 
-class TrainerWithCustomSampler(Trainer):
+class TrainerWithCustomLog(Trainer):
 
-    def _get_train_sampler(self, train_dataset: Optional[Dataset] = None) -> Optional[torch.utils.data.Sampler]:
-        if train_dataset is None:
-            train_dataset = self.train_dataset
-        if train_dataset is None or not has_length(train_dataset):
-            return None
+    def compute_loss(self, model, inputs, return_outputs=False):
+        loss, outputs = super().compute_loss(model, inputs, True)
 
-        if isinstance(train_dataset, ConcatDataset):
-            num_samples_per_epoch = len(train_dataset)
-            weights_per_sample = [len(ds) for ds in train_dataset.datasets]
-            sampler = WeightedRandomSampler(weights=weights_per_sample, num_samples=num_samples_per_epoch, replacement=True)
-            rank0_print(f"Using WeightedRandomSampler: {weights_per_sample}")
-            return sampler
+        loss_emb = outputs.get('loss_emb', None)
+        loss_gen = outputs.get('loss_gen', None)
+        
+        self.log({
+            "loss_emb": loss_emb.item() if loss_emb is not None else 0,
+            "loss_gen": loss_gen.item() if loss_gen is not None else 0
+        })
 
-        # Build the sampler.
-        if self.args.group_by_length:
-            if is_datasets_available() and isinstance(train_dataset, datasets.Dataset):
-                lengths = (
-                    train_dataset[self.args.length_column_name]
-                    if self.args.length_column_name in train_dataset.column_names
-                    else None
-                )
-            else:
-                lengths = None
-            model_input_name = (
-                self.processing_class.model_input_names[0] if self.processing_class is not None else None
-            )
-            return LengthGroupedSampler(
-                self.args.train_batch_size * self.args.gradient_accumulation_steps,
-                dataset=train_dataset,
-                lengths=lengths,
-                model_input_name=model_input_name,
-            )
-
-        else:
-            return RandomSampler(train_dataset)
-
+        return (loss, outputs) if return_outputs else loss
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -242,7 +219,7 @@ def train():
     )
 
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = TrainerWithCustomSampler(
+    trainer = TrainerWithCustomLog(
         model=model,
         args=training_args,
         data_collator=data_collator,
