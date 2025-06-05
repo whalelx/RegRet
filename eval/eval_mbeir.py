@@ -91,7 +91,7 @@ def eval(args):
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
 
-    add_embed_token(tokenizer, model)
+    # add_embed_token(tokenizer, model)
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 

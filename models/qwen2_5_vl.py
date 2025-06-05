@@ -240,7 +240,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
         # Combine losses
         if language_loss is not None and contrastive_loss is not None:
-            language_loss *= 0.09
+            language_loss *= self.config.language_loss_weight
             total_loss = language_loss + contrastive_loss
         elif language_loss is not None:
             total_loss = language_loss

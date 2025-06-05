@@ -86,4 +86,5 @@ torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --lora_alpha $LORA_ALPHA \
     --model_local_path $MODEL_LOCAL_PATH \
     --image_path_prefix $IMAGE_PATH_PREFIX \
-    --use_flash_attn True
+    --use_flash_attn True \
+    --language_loss_weight 0.09

@@ -71,7 +71,7 @@ def generate_mbeir_files(filtered_samples_path, filtered_labels_path, output_dir
             print(f"Warning: Query ID {original_query_id} found in samples but not in labels. Skipping.")
             continue
 
-        original_query_image_id = candidate_items_for_query[0].get("query_image_id").split("/")[-1]
+        original_query_image_id = "_".join(candidate_items_for_query[0].get("query_image_id").split("/"))
         original_query_image_url = candidate_items_for_query[0].get("query_image_url")
         original_query_box = candidate_items_for_query[0].get("query_box")
 
@@ -117,7 +117,7 @@ def generate_mbeir_files(filtered_samples_path, filtered_labels_path, output_dir
             cand_item_dict = candidate_items_for_query[i] # Assuming candidate_items_for_query is ordered like sorted_original_score_keys
             
             original_cand_img_url = cand_item_dict.get("doc_image_url")
-            original_cand_img_id = cand_item_dict.get("doc_image_id")
+            original_cand_img_id = "_".join(cand_item_dict.get("doc_image_id").split("/"))
             original_cand_caption = None #cand_item_dict.get("caption")
             original_cand_img_path = original_cand_img_id+".jpg"
 

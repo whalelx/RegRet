@@ -55,7 +55,7 @@ class DataArguments:
     dam_data_path: str = field(
         default=None, metadata={"help": "Path to the dam data."}
     )
-    dam_max_samples: str = field(
+    dam_max_samples: int = field(
         default=200000, metadata={"help": "Maximum number of samples to use from the dam data."}
     )
     instructions_path: str = field(
@@ -82,7 +82,12 @@ class TrainingArguments(transformers.TrainingArguments):
     train_vision_encoder: bool = False
     train_vision_projector: bool = False
     vision_projector_lr: float = None 
-
+    language_loss_weight: float = field(
+        default=1.0,
+        metadata={
+            "help": "Weight for language generation loss in combined loss calculation."
+        },
+    )
     def __post_init__(self):
         super().__post_init__()
         self.remove_unused_columns = False
