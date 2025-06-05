@@ -112,13 +112,14 @@ class LazySupervisedDataset(Dataset):
         pos_cand_txt = self.tokenizer(pos_cand_txt, truncation=True, max_length=480, padding=False, return_tensors=None, add_special_tokens=False)
         pos_cand_txt = self.tokenizer.decode(pos_cand_txt['input_ids'])
         
-        query = _prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix)
+        query = _prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix, mbeir_entry.get("box",None))
         # query = _prepare_data_dict(query_txt_without_prompt, query_img_path, image_path_prefix)
         instance = {"query": query}
         pos_cand = _prepare_data_dict(
             pos_cand_txt,
             pos_cand.get("img_path", None),
             self.image_path_prefix,
+            pos_cand.get("box",None)
         )
         instance.update({"pos_cand": pos_cand})
         return instance 
@@ -410,13 +411,13 @@ def _load_and_preprocess_image(query_img_path, image_path_prefix):
     assert os.path.exists(full_query_img_path), f"Image Path {full_query_img_path} does not exist"
     return full_query_img_path
 
-def _prepare_data_dict(txt, img_path, image_path_prefix):
+def _prepare_data_dict(txt, img_path, image_path_prefix,box=None):
     img = _load_and_preprocess_image(img_path, image_path_prefix)
     if img is None:
-        return {'txt': txt}
+        return {'txt': txt, "box":box}
     elif txt == '':
-        return {'image': img}
-    return {"txt": txt, "image": img}
+        return {'image': img, "box":box}
+    return {"txt": txt, "image": img, "box":box}
 
 def _load_data_jsonl(datapath):
     data_entries = []

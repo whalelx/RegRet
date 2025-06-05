@@ -33,7 +33,7 @@ MODEL_MAX_LEN=1024
 
 torchrun $DISTRIBUTED_ARGS train/train_nli.py \
     --model_id $MODEL_ID \
-    --model_local_path  /mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-7B-Instruct/snapshots/cc594898137f460bfe9f0759e9844b3ce807cfb5\
+    --model_local_path /mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-7B-Instruct/snapshots/cc594898137f460bfe9f0759e9844b3ce807cfb5 \
     --data_path $TRAIN_DATA_PATH \
     --output_dir ./checkpoints/$RUN_ID \
     --report_to tensorboard \

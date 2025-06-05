@@ -20,19 +20,51 @@ class XHSDataset(LazySupervisedDataset):
         super(XHSDataset, self).__init__(query_data_path, cand_pool_path, instructions_path, image_path_prefix, tokenizer)
 
     def construct_messages(self, data_dict):
-        message = [
-            {
-                "role": "user",
-                "content": [
+        if 'txt' in data_dict and 'image' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
                     {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
-                    {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
-                ]
-            },
-            {
-                "role": "assistant",
-                "content": [
-                    {"type": "text", "text": f"<emb>."}
-                ]
-            },
-        ]
+                        {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": f"<emb>."}
+                    ]
+                },
+            ]
+        elif 'txt' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"{data_dict['txt']}\nSummarize above sentence in one word: "}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": f"<emb>."}
+                    ]
+                },
+            ]
+        elif 'image' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                    {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "text", "text": f"\nSummarize above image in one word: "}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": f"<emb>."}
+                    ]
+                },
+            ]
         return message

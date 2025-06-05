@@ -13,3 +13,4 @@ checkpoints/
 rerank_training_data/
 mbeir_rerank_files/
 .ipynb_checkpoints/
+.vscode

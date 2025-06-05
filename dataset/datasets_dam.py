@@ -4,13 +4,13 @@ from torch.utils.data import Dataset
 from datasets import load_dataset
 import numpy as np
 import pycocotools
+from pycocotools import mask as cocomask
 from PIL import Image
 import pickle
-
-# datapath = "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data"
+import random
 
 def counts_to_mask(maskrle):
-    return np.array(pycocotools.mask.decode(maskrle), dtype=np.float32)
+    return np.array(cocomask.decode(maskrle), dtype=np.float32)
 
 def visualize_mask_on_image_pil(original_pil, binary_mask_np, 
                                 color=(255, 0, 0), alpha_percent=50):
@@ -43,7 +43,7 @@ def mask2box(mask):
     return box
 
 def lower_resolution(img: Image):
-    h, w = img.shape
+    h, w = img.size
     if h > 1000 and w > 1000:
         return img.resize((h//10, w//10))
     else:
@@ -58,22 +58,29 @@ class DAMDataset(Dataset):
         max_samples: int = 200000,
     ) -> None:
         super(DAMDataset, self).__init__()
-        self.images = []
-        self.split_names =  ['COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO', 'SAM', 'SAV']
+        # 'SAM' is too large, 'SAV' caption is missing
+        self.split_names =  ['COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO'] 
         self.dataset = {k: load_dataset(data_path, k) for k in self.split_names}
-        self.single_split_size = max_samples // len(self.split_names)
-        self.max_samples = self.single_split_size * len(self.split_names)
+        self.lengths = [len(self.dataset[n]['train']) for n in self.split_names]
+        self.max_samples = max_samples
 
         self.mode = mode
 
     def __len__(self) -> int:
         return self.max_samples
+    
+    def get_dataset_idx(self, index):
+        for i, ds in enumerate(self.lengths):
+            if index < ds:
+                return i, index
+            else:
+                index -= ds
 
     def construct_messages(self, idx: int):
-        splitname = self.split_names[idx // self.single_split_size]
-        item = self.dataset[splitname]['train'][idx % self.single_split_size]
-
-        anno = np.random.choice(pickle.loads(item['pickle']))
+        i, index = self.get_dataset_idx(idx)
+        splitname = self.split_names[i]
+        item = self.dataset[splitname]['train'][index]
+        anno = random.choice(pickle.loads(item['pickle']))
         text = anno['caption']
         mask = counts_to_mask(anno['mask_rle'])
         box = mask2box(mask)
@@ -98,13 +105,23 @@ class DAMDataset(Dataset):
         return message
 
     def get_instance(self, index):
-        if self.mode == 'finetuned':
-            text = "Find an image caption describing the following everyday image." # TODO
-            message = self.construct_messages(i)
-        elif self.mode == 'pretrained':
-            message = self.construct_messages(image=self.images[index])
+        message = self.construct_messages(index)
         
         return message 
 
-    def __getitem__(self, i) -> Dict[str, List]:      
-        return self.get_instance(i), i 
+    def __getitem__(self, i) -> Dict[str, List]:   
+        if i==0: 
+            j = 1
+        else:
+            j = i-1   
+        j = i + self.max_samples
+        return self.get_instance(i),self.get_instance(j)
+
+
+if __name__ == "__main__":
+    datapath = "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data"
+
+    ds = DAMDataset(datapath)
+    breakpoint()
+    ds[0]
+    ds[97000]
