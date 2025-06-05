@@ -1,6 +1,6 @@
-MODEL_ID="./checkpoints/qwen2_5-vl-7b_LamRA-Ret-Qwen2.5VL"
-ORIGINAL_MODEL_ID=./checkpoints/hf_models/Qwen2.5-VL-7B-Instruct 
-IMAGE_PATH_PREFIX=./data/M-BEIR
+MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune"
+ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
+IMAGE_PATH_PREFIX=/mnt/tidal-alsh01/dataset/mmeb/M-BEIR
 
 # CUDA_VISIBLE_DEVICES='0,1,2,3,4,5,6,7' accelerate launch --multi_gpu --main_process_port 29509 eval/eval_mbeir.py \
 #     --query_data_path ./data/M-BEIR/query/test/mbeir_mscoco_task0_test.jsonl \

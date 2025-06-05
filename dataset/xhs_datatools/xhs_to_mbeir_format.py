@@ -10,10 +10,10 @@ import asyncio
 DATASET_ID_XHS = "10"
 TASK_ID_XHS = "7"
 # "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/mbeir_images/xhs_images"
-XHS_IMAGE_SUBDIR = "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/images" # Assumed subdirectory for XHS images within IMAGE_PATH_PREFIX_MBEIR
+XHS_IMAGE_SUBDIR = "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/images"
 
 ON_SERVER = True
-DOWNLOAD_IMAGE = True
+DOWNLOAD_IMAGE = False
 TRAIN = True
 
 CONCURRENCY= 100
@@ -189,7 +189,7 @@ def generate_mbeir_files(filtered_samples_path, filtered_labels_path, output_dir
         download_and_draw_box(original_query_image_url, query_img_path_for_jsonl)
         
         # CRITICAL: Placeholder for query_txt. User needs to replace this with actual query text.
-        query_txt_for_jsonl = f"Retrieve content related to the object bounded by the red box" 
+        query_txt_for_jsonl = "" #f"Retrieve content related to the object bounded by the red box"
         
         query_modality = "image,text" # Default, adjust based on actual query content availability
         # Example: if not query_txt_for_jsonl: query_modality = "image"
@@ -264,6 +264,11 @@ python3 dataset/xhs_datatools/xhs_to_mbeir_format.py \
 
 python3 dataset/xhs_datatools/xhs_to_mbeir_format.py \
     --filtered_samples_path /mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/20250304.json \
+    --filtered_labels_path /mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/20250304_label.json \
+    --output_dir /mnt/tidal-alsh01/dataset/mmeb/M-BEIR
+
+python3 dataset/xhs_datatools/xhs_to_mbeir_format.py \
+    --filtered_samples_path /mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/filtered_20250304_80K.json \
     --filtered_labels_path /mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/20250304_label.json \
     --output_dir /mnt/tidal-alsh01/dataset/mmeb/M-BEIR
 '''

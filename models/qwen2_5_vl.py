@@ -23,6 +23,12 @@ class Similarity(nn.Module):
     def forward(self, x, y):
         return self.cos(x, y) / self.temp
 
+from dataclasses import dataclass
+@dataclass
+class ExtraLossOutput(SequenceClassifierOutput):
+    loss_emb: torch.FloatTensor = None
+    loss_gen: torch.FloatTensor = None
+
 class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
     def __init__(self, config):
@@ -234,6 +240,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
         # Combine losses
         if language_loss is not None and contrastive_loss is not None:
+            language_loss *= 0.09
             total_loss = language_loss + contrastive_loss
         elif language_loss is not None:
             total_loss = language_loss
@@ -242,4 +249,4 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         else:
             total_loss = None
 
-        return SequenceClassifierOutput(loss=total_loss)
+        return ExtraLossOutput(loss=total_loss, loss_gen=language_loss, loss_emb=contrastive_loss)

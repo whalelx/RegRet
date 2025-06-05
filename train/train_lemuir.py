@@ -33,20 +33,7 @@ from utils import (
     get_peft_state_maybe_zero_3
 )
 
-class TrainerWithCustomLog(Trainer):
-
-    def compute_loss(self, model, inputs, return_outputs=False):
-        loss, outputs = super().compute_loss(model, inputs, True)
-
-        loss_emb = outputs.get('loss_emb', None)
-        loss_gen = outputs.get('loss_gen', None)
-        
-        self.log({
-            "loss_emb": loss_emb.item() if loss_emb is not None else 0,
-            "loss_gen": loss_gen.item() if loss_gen is not None else 0
-        })
-
-        return (loss, outputs) if return_outputs else loss
+from trainer import CustomTrainer
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -187,7 +174,7 @@ def train():
         cand_pool_path=data_args.cand_pool_path,
         instructions_path=data_args.instructions_path,
         image_path_prefix=data_args.image_path_prefix,
-        tokenizer=tokenizer 
+        tokenizer=tokenizer,
     )
 
     xhs_dataset = XHSDataset(
@@ -208,6 +195,7 @@ def train():
     #     max_samples=data_args.mmeb_max_samples
     # )
     train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
@@ -223,7 +211,8 @@ def train():
         model=model,
         args=training_args,
         data_collator=data_collator,
-        train_dataset=train_dataset, 
+        train_dataset=train_dataset,
+        extra_losses=["loss_emb", "loss_gen"]
     )
     
     trainer.train()

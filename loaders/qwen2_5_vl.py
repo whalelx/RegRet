@@ -25,7 +25,7 @@ class Qwen2_5VLModelLoader(BaseModelLoader):
     def add_embed_token(self, tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        assert len(emb_tokens) == num_new_tokens
+        assert len(emb_tokens) == num_new_tokens, f"{len(emb_tokens)} not equals {num_new_tokens}"
 
         model.resize_token_embeddings(len(tokenizer))
 
