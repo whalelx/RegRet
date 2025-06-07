@@ -2,9 +2,7 @@ from typing import Dict, Sequence
 import torch
 from .base import BaseDataCollator
 from .qwen2_5_vision_process import process_vision_info
-from dataclasses import dataclass
 
-@dataclass
 class MMEBEvalCollator(BaseDataCollator):
     @property
     def PAD_TOKEN_ID(self) -> int:

@@ -12,3 +12,6 @@ LamRA_Ret_eval_results/
 checkpoints/ 
 rerank_training_data/
 mbeir_rerank_files/
+.ipynb_checkpoints/
+.vscode
+mmeb_eval_results/
