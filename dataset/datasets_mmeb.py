@@ -37,9 +37,9 @@ class MMEBEvalDataset(Dataset):
         """
         super().__init__()
 
-        self.dataset_name = data_args.dataset_name
-        self.image_resolution = data_args.image_resolution
-        self.image_dir = data_args.image_dir
+        self.dataset_name = data_args["dataset_name"]
+        self.image_resolution = data_args["image_resolution"]
+        self.image_dir = data_args["image_dir"]
 
         self.eval_data = load_dataset(
             self.dataset_name, # TIGER-Lab/MMEB-eval
@@ -57,14 +57,15 @@ class MMEBEvalDataset(Dataset):
 
     def __getitem__(self, item):
         text, img_path = self.paired_dataset[item]["text"], self.paired_dataset[item]["img_path"]
-
-        text = text.replace(vlm_image_tokens["PHI3V"], vlm_image_tokens["QWEN2_5_VL"])
-        img_path = "" if img_path == "None" else os.path.join(self.image_dir, img_path)
+        text = text.replace(vlm_image_tokens["PHI3V"], "") #NOTE in mbeir there are no such things vlm_image_tokens["QWEN2_5_VL"]
+        if img_path != "" and img_path is not None:
+            img_path = os.path.join(self.image_dir, img_path)
         message = self.construct_messages(self._prepare_data_dict(text, img_path))
+
         return message, None
 
-    def _prepare_data_dict(txt, img_path, box=None):
-        if img_path is None:
+    def _prepare_data_dict(self, txt, img_path, box=None):
+        if img_path is None or img_path == '':
             return {'txt': txt, "box":box}
         elif txt == '':
             return {'image': img_path, "box":box}

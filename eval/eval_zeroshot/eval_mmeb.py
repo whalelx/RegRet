@@ -133,31 +133,30 @@ def main():
                 num_workers=args.num_workers,
             )
 
-
-            encoded_tensor = []
-            with torch.no_grad():
-                for batch in tqdm(eval_qry_loader, desc="Encode query"):
-                    batch = batch_to_device(batch, device)
-                    with torch.autocast(enabled=True, dtype=torch.bfloat16, device_type="cuda"):
-                        embeddings = model(**batch, inference=True)
-                        embeddings = F.normalize(embeddings, dim=-1)
-                        encoded_tensor.append(embeddings.cpu().detach().float().numpy())
-            encoded_tensor = np.concatenate(encoded_tensor)
-            with open(encode_qry_path, 'wb') as f:
-                pickle.dump((encoded_tensor, eval_qry_dataset.paired_data), f)
-
             # Encode targets
             encoded_tensor = []
             with torch.no_grad():
                 for batch in tqdm(eval_tgt_loader, desc="Encode target"):
                     batch = batch_to_device(batch, device)
                     with torch.autocast(enabled=True, dtype=torch.bfloat16, device_type="cuda"):
-                        embeddings = model(**batch, inference=True)
+                        embeddings,_ = model(**batch, inference=True)
                         embeddings = F.normalize(embeddings, dim=-1)
                         encoded_tensor.append(embeddings.cpu().detach().float().numpy())
             encoded_tensor = np.concatenate(encoded_tensor)
             with open(encode_tgt_path, 'wb') as f:
                 pickle.dump((encoded_tensor, eval_tgt_dataset.paired_data), f)
+
+            encoded_tensor = []
+            with torch.no_grad():
+                for batch in tqdm(eval_qry_loader, desc="Encode query"):
+                    batch = batch_to_device(batch, device)
+                    with torch.autocast(enabled=True, dtype=torch.bfloat16, device_type="cuda"):
+                        embeddings, _ = model(**batch, inference=True)
+                        embeddings = F.normalize(embeddings, dim=-1)
+                        encoded_tensor.append(embeddings.cpu().detach().float().numpy())
+            encoded_tensor = np.concatenate(encoded_tensor)
+            with open(encode_qry_path, 'wb') as f:
+                pickle.dump((encoded_tensor, eval_qry_dataset.paired_data), f)
 
     # Calculate scores for each subset
     for subset in tqdm(args.subset_name, desc="calculate score"):
