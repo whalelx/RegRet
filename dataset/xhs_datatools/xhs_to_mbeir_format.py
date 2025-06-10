@@ -75,10 +75,16 @@ def generate_mbeir_files(filtered_samples_path, filtered_labels_path, output_dir
         original_query_image_url = candidate_items_for_query[0].get("query_image_url")
         original_query_box = candidate_items_for_query[0].get("query_box")
 
-        scores_for_query = labels_input[original_query_id]
-        # Ensure the order of candidates matches the order of their original score keys
-        # This is crucial for correctly associating items from queries_input with their scores
-        sorted_original_score_keys_for_current_query_candidates = sorted(scores_for_query.keys(), key=int)
+        # scores_for_query = labels_input[original_query_id]
+        # # Ensure the order of candidates matches the order of their original score keys
+        # # This is crucial for correctly associating items from queries_input with their scores
+        # sorted_original_score_keys_for_current_query_candidates = sorted(scores_for_query.keys(), key=int)
+        sorted_original_score_keys_for_current_query_candidates = {}
+        for j,dd in enumerate(candidate_items_for_query):
+            sorted_original_score_keys_for_current_query_candidates[j+1] = {
+                'img2img': dd['img2img'],
+                'mm2mm': dd['mm2mm']
+            }
 
         if len(candidate_items_for_query) != len(sorted_original_score_keys_for_current_query_candidates):
             print(f"Warning: Mismatch in candidate list length ({len(candidate_items_for_query)}) and score key count ({len(sorted_original_score_keys_for_current_query_candidates)}) for query '{original_query_id}'. Skipping this query.")
@@ -88,8 +94,7 @@ def generate_mbeir_files(filtered_samples_path, filtered_labels_path, output_dir
         temp_neg_original_score_keys = []
 
         # Iterate based on the sorted score keys to ensure correct association with candidate_items_for_query
-        for original_score_key in sorted_original_score_keys_for_current_query_candidates:
-            scores_dict = scores_for_query[original_score_key]
+        for original_score_key,scores_dict in sorted_original_score_keys_for_current_query_candidates.items():
             img_score = scores_dict.get('img2img', 0)
             mm_score = scores_dict.get('mm2mm', 0)
             
