@@ -55,19 +55,19 @@ class DAMDataset(Dataset):
         self, 
         data_path: str, 
         mode: str='pretrained',
-        max_samples: int = 200000,
+        max_length: int = 100000,
     ) -> None:
         super(DAMDataset, self).__init__()
         # 'SAM' is too large, 'SAV' caption is missing
         self.split_names =  ['COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO'] 
         self.dataset = {k: load_dataset(data_path, k) for k in self.split_names}
         self.lengths = [len(self.dataset[n]['train']) for n in self.split_names]
-        self.max_samples = max_samples
+        self.max_length = max_length
 
         self.mode = mode
 
     def __len__(self) -> int:
-        return self.max_samples
+        return self.max_length
     
     def get_dataset_idx(self, index):
         for i, ds in enumerate(self.lengths):
@@ -109,13 +109,9 @@ class DAMDataset(Dataset):
         
         return message 
 
-    def __getitem__(self, i) -> Dict[str, List]:   
-        if i==0: 
-            j = 1
-        else:
-            j = i-1   
-        j = i + self.max_samples
-        return self.get_instance(i),self.get_instance(j)
+    def __getitem__(self, i) -> Dict[str, List]: 
+        j = i + self.max_length
+        return self.get_instance(i), self.get_instance(j)
 
 
 if __name__ == "__main__":

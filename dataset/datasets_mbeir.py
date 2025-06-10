@@ -448,3 +448,112 @@ def unhash_did(hashed_did):
 def _load_cand_pool(cand_pool_data_path):
     cand_pool = _load_data(cand_pool_data_path)
     return cand_pool
+
+
+class MbeirLanguageDataset(LazySupervisedDataset):
+
+    def __init__(
+        self, 
+        query_data_path: str, 
+        cand_pool_path: str, 
+        instructions_path: str,
+        image_path_prefix: str,
+        tokenizer = None,
+        max_length = None
+    ) -> None:
+        super().__init__(
+            query_data_path, 
+            cand_pool_path, 
+            instructions_path, 
+            image_path_prefix, 
+            tokenizer, 
+            max_length
+        )
+
+    def construct_messages(self, data_dict, pos_cand_dict):
+        if 'image' in data_dict and 'txt' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "text", "text": f"{data_dict['txt']}\nDescribe the whole image through a caption."}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": pos_cand_dict['txt'] }
+                    ]
+                }
+            ]
+            return message
+        elif 'image' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "text", "text": "Describe the whole image through a caption."}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": pos_cand_dict['txt'] }
+                    ]
+                }
+            ]
+            return message
+        else:
+            raise ValueError("Data dictionary must contain both 'image' and 'txt' keys for MbeirLanguageDataset.")
+        
+    def get_instance(self, index):
+        mbeir_entry = self.query_data[index]
+        query_txt = mbeir_entry.get('query_txt') or ""
+        query_img_path = mbeir_entry.get('query_img_path', None)
+        query_modality = mbeir_entry.get("query_modality", None)
+        qid = mbeir_entry.get("qid", None)
+        query_dataset_id = qid.split(":")[0] if qid else None 
+        pos_cand_list = mbeir_entry.get("pos_cand_list", [])
+        selected_pos_cand_did = _get_random_cand(pos_cand_list)
+        pos_cand = self.cand_pool.get(selected_pos_cand_did)
+        pos_cand_dataset_id = selected_pos_cand_did.split(":")[0]
+        pos_cand_modality = pos_cand.get("modality", None)
+        pos_cand_txt = pos_cand.get("txt") or ""
+        pos_cand_txt = format_string(pos_cand_txt)
+
+        query_txt_without_prompt = format_string(f"{query_txt}")
+        pos_img_path = pos_cand.get("img_path", None)
+
+        # truncation processing is applied to prevent memory overflow.
+        query_txt_without_prompt = self.tokenizer(query_txt_without_prompt, truncation=True, max_length=480, padding=False, return_tensors=None, add_special_tokens=False)
+        query_txt_without_prompt = self.tokenizer.decode(query_txt_without_prompt['input_ids'])
+        # query_txt_without_prompt = self.tokenizer(query_txt_without_prompt, truncation=True, max_length=480, padding=False, return_tensors=None, add_special_tokens=False)
+        # query_txt_without_prompt = self.tokenizer.decode(query_txt_without_prompt['input_ids'])
+        pos_cand_txt = self.tokenizer(pos_cand_txt, truncation=True, max_length=480, padding=False, return_tensors=None, add_special_tokens=False)
+        pos_cand_txt = self.tokenizer.decode(pos_cand_txt['input_ids'])
+
+        query = _prepare_data_dict(query_txt_without_prompt, query_img_path, self.image_path_prefix, mbeir_entry.get("box",None))
+        # query = _prepare_data_dict(query_txt_without_prompt, query_img_path, image_path_prefix)
+        instance = {"query": query}
+        pos_cand = _prepare_data_dict(
+            pos_cand_txt,
+            pos_cand.get("img_path", None),
+            self.image_path_prefix,
+            pos_cand.get("box",None)
+        )
+        instance.update({"pos_cand": pos_cand})
+        return instance 
+
+    def __getitem__(self, i):
+        
+        instance = self.get_instance(i)
+        message1 = self.construct_messages(instance["query"], instance["pos_cand"])
+        
+        j = i + self.max_length
+        assert self.max_length <= 100000, "We only use 100k*2 language samples for now"
+        instance = self.get_instance(j)
+        message2 = self.construct_messages(instance["query"], instance["pos_cand"])
+
+        return message1, message2

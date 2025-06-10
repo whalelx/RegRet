@@ -37,22 +37,23 @@ from torch.utils.data import DataLoader
 from transformers.trainer_utils import seed_worker
 
 class GroupBatchSampler(BatchSampler):
-    def __init__(self, dataset: ConcatDataset, batch_size: int, drop_last: bool):
-        sampler = RandomSampler(ConcatDataset([dataset.datasets[0], dataset.datasets[1]]))
-        self.dam_sampler = RandomSampler(dataset.datasets[-1])
-        super().__init__(sampler, batch_size, drop_last)
-
+    def __init__(self, dataset: ConcatDataset, batch_size: int, drop_last: bool, language_ds_startidx: int = 2):
+        contra_sampler = RandomSampler(ConcatDataset([dataset.datasets[0:language_ds_startidx]]))
+        self.language_sampler = RandomSampler(
+            ConcatDataset(dataset.datasets[language_ds_startidx:]) if len(dataset.datasets) > language_ds_startidx else dataset.datasets[-1]
+        )
+        super().__init__(contra_sampler, batch_size, drop_last)
         lengths = torch.tensor([len(g) for g in dataset.datasets])
-        self.ratio = 1 - (lengths[-1] / lengths.sum()).item()
+        self.ratio = 1 - (lengths[language_ds_startidx:].sum() / lengths.sum()).item()
         self.group_bsz = int(self.ratio * self.batch_size) + 1
-        self.dam_bsz = self.batch_size - self.group_bsz
-        self.dam_idx_offset = lengths[:2].sum().item()
+        self.language_bsz = self.batch_size - self.group_bsz
+        self.language_dataset_offset = lengths[:language_ds_startidx].sum().item()
 
     def dam_generator(self):
         batch = []
-        for idx in self.dam_sampler:
-            batch.append(idx + self.dam_idx_offset)
-            if len(batch) == self.dam_bsz:
+        for idx in self.language_sampler:
+            batch.append(idx + self.language_dataset_offset)
+            if len(batch) == self.language_bsz:
                 yield batch
                 batch = []
 
@@ -69,16 +70,17 @@ class GroupBatchSampler(BatchSampler):
 ######### trainer #########
 
 class CustomTrainer(Trainer):
-    def __init__(self, extra_losses: List[str] = None, **kwargs):
+    def __init__(self, extra_losses: List[str] = None, language_ds_startidx: int = 2, **kwargs):
         super().__init__(**kwargs)
+        self.language_ds_startidx = language_ds_startidx
         if extra_losses is not None:
             self.add_callback(AddExtraLossesToTrainerState(extra_losses))
 
         self.eval_dataloader = None
 
     def _get_train_batch_sampler(self, dataset: ConcatDataset, batch_size: int, drop_last: bool) -> BatchSampler:
-        return GroupBatchSampler(dataset, batch_size=batch_size, drop_last=drop_last)
-    
+        return GroupBatchSampler(dataset, batch_size=batch_size, drop_last=drop_last, language_ds_startidx=self.language_ds_startidx)
+
     def get_train_dataloader(self) -> DataLoader:
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
