@@ -38,9 +38,11 @@ from transformers.trainer_utils import seed_worker
 
 class GroupBatchSampler(BatchSampler):
     def __init__(self, dataset: ConcatDataset, batch_size: int, drop_last: bool, language_ds_startidx: int = 2):
-        contra_sampler = RandomSampler(ConcatDataset([dataset.datasets[0:language_ds_startidx]]))
+        contra_sampler = RandomSampler(ConcatDataset([dataset.datasets[_] for _ in range(language_ds_startidx)]))
         self.language_sampler = RandomSampler(
-            ConcatDataset(dataset.datasets[language_ds_startidx:]) if len(dataset.datasets) > language_ds_startidx else dataset.datasets[-1]
+            ConcatDataset([dataset.datasets[_] for _ in range(language_ds_startidx, len(dataset.datasets))]) \
+                if len(dataset.datasets) > language_ds_startidx \
+                else dataset.datasets[-1]
         )
         super().__init__(contra_sampler, batch_size, drop_last)
         lengths = torch.tensor([len(g) for g in dataset.datasets])

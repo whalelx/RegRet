@@ -552,7 +552,6 @@ class MbeirLanguageDataset(LazySupervisedDataset):
         message1 = self.construct_messages(instance["query"], instance["pos_cand"])
         
         j = i + self.max_length
-        assert self.max_length <= 100000, "We only use 100k*2 language samples for now"
         instance = self.get_instance(j)
         message2 = self.construct_messages(instance["query"], instance["pos_cand"])
 

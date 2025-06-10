@@ -189,11 +189,11 @@ def train():
     )
     dam_dataset = DAMDataset(
         data_path=data_args.dam_data_path,
-        max_samples=data_args.dam_max_samples
+        max_length=data_args.dam_max_samples
     )
     mbeir_language_dataset = MbeirLanguageDataset(
         query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
-        cand_pool_path=data_args.xhs_cand_pool_path,
+        cand_pool_path=data_args.cand_pool_path,
         instructions_path=data_args.instructions_path,
         image_path_prefix=data_args.image_path_prefix,
         tokenizer=tokenizer,
