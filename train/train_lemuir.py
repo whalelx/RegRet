@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 from typing import List, Optional
 import yaml
+import debugpy
 
 from accelerate.utils import DistributedType
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
@@ -34,6 +35,15 @@ from utils import (
 )
 
 from trainer import CustomTrainer
+
+def setup_debugpy(local_rank):
+    import torch.distributed as dist
+    if dist.get_rank() == local_rank:
+        print(f"Debugger listening on rank {local_rank}")
+        debugpy.listen(("0.0.0.0", 9999))
+        print("Waiting for debugger attach...")
+        debugpy.wait_for_client()
+    dist.barrier()
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -197,7 +207,7 @@ def train():
         instructions_path=data_args.instructions_path,
         image_path_prefix=data_args.image_path_prefix,
         tokenizer=tokenizer,
-        max_length=100000
+        max_length=110000
     )
     # mmeb_dataset = MMEBDataset(
     #     data_path=data_args.mmeb_data_path,

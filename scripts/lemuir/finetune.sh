@@ -38,7 +38,7 @@ LORA_R=128
 LORA_ALPHA=256                                           
 RUN_ID=${MODEL_ID}_LEMUIR_tune
 
-DS_STAGE=zero3 # TODO @lx zero3
+DS_STAGE=zero3
 PER_DEVICE_BATCH_SIZE=80
 GRAD_ACCUM=2                                         
 NUM_EPOCHS=1                                         

@@ -176,7 +176,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
                 shift_logits = shift_logits.view(-1, self.config.vocab_size)
                 shift_labels = shift_labels.view(-1)
                 # Enable model parallelism
-                shift_labels = shift_labels.to(shift_logits.device)【
+                shift_labels = shift_labels.to(shift_logits.device)
                 language_loss = loss_fct(shift_logits, shift_labels)
 
         # contrastive learning
