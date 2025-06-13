@@ -156,13 +156,25 @@ def train():
 
     # load data
     rank0_print("Loading data...")
-    train_dataset = LazySupervisedDataset(
+    mbeir_dataset = LazySupervisedDataset(
         query_data_path=data_args.query_data_path,
         cand_pool_path=data_args.cand_pool_path,
         instructions_path=data_args.instructions_path,
         image_path_prefix=data_args.image_path_prefix,
         tokenizer=tokenizer 
     )
+
+    from dataset.datasets_xhs import XHSDataset
+    xhs_dataset = XHSDataset(
+        query_data_path=data_args.xhs_query_data_path,
+        cand_pool_path=data_args.xhs_cand_pool_path,
+        instructions_path=data_args.instructions_path,
+        image_path_prefix=data_args.image_path_prefix,
+        tokenizer=tokenizer 
+    )
+
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+
     
     eval_dataset = None
     training_args.eval_strategy = "no"

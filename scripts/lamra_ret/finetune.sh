@@ -1,8 +1,7 @@
 NUM_GPUS=8
-NPROC_PER_NODE=8
-NNODES=2
-NODE_RANK=1 # 1
-MASTER_ADDR=`ip_address`
+NNODES=1
+NODE_RANK=0 # 1
+MASTER_ADDR="0.0.0.0"
 MASTER_PORT=29508
 
 DISTRIBUTED_ARGS="
@@ -21,13 +20,13 @@ DISTRIBUTED_ARGS="
 
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=qwen2_5-vl-7b                                 
-QUERY_DATA_PATH=./data/M-BEIR/query/union_train/mbeir_union_up_train.jsonl
-CAND_POOL_PATH=./data/M-BEIR/cand_pool/global/mbeir_union_train_cand_pool.jsonl
-INSTRUCTIONS_PATH=./data/M-BEIR/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH=./checkpoints/LamRA-Ret-Pretrained-Qwen2.5VL-merged
-# MODEL_LOCAL_PATH=path_to_LamRA_Ret_merged
-IMAGE_PATH_PREFIX=./data/M-BEIR
+MODEL_ID=qwen2_5-vl-7b
+DATASET_PATH=/mnt/tidal-sh01/dataset/mmeb
+IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
+QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
+CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
+INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
+MODEL_LOCAL_PATH=./checkpoints/LEMUIR_Pretrain
 
 TRAIN_VISION_ENCODER=False                              
 USE_VISION_LORA=False                                  
@@ -37,14 +36,14 @@ USE_LORA=True
 Q_LORA=False                                           
 LORA_R=128                                                
 LORA_ALPHA=256                                           
-RUN_ID=${MODEL_ID}_LamRA-Ret
+RUN_ID=${MODEL_ID}_LamRA_xhs+mbeir_75bs
 
-DS_STAGE=zero3                                         
-PER_DEVICE_BATCH_SIZE=60                               
-GRAD_ACCUM=1                                            
+DS_STAGE=zero2
+PER_DEVICE_BATCH_SIZE=75
+GRAD_ACCUM=2               
 NUM_EPOCHS=1                                         
 
-LR=1e-4                                               
+LR=0.00011
 MODEL_MAX_LEN=1024
 
 
@@ -53,6 +52,10 @@ torchrun $DISTRIBUTED_ARGS train/train_mbeir.py \
     --query_data_path $QUERY_DATA_PATH \
     --cand_pool_path $CAND_POOL_PATH \
     --instructions_path $INSTRUCTIONS_PATH \
+    --xhs_query_data_path ${DATASET_PATH}/M-BEIR/query/train/mbeir_xhsnote_task7_train.jsonl \
+    --xhs_cand_pool_path ${DATASET_PATH}/M-BEIR/cand_pool/local/mbeir_xhsnote_task7_cand_pool.jsonl \
+    --dam_data_path ${DATASET_PATH}/describe-anything-data \
+    --dam_max_samples 100000 \
     --output_dir ./checkpoints/$RUN_ID \
     --report_to tensorboard \
     --run_name $RUN_ID \

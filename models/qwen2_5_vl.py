@@ -33,8 +33,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
     def __init__(self, config):
         super().__init__(config)
-        self.emb_head = nn.Linear(config.hidden_size, config.hidden_size, bias=True)
-        self._init_embhead_weights()
+
 
     def _init_embhead_weights(self):
         nn.init.constant_(self.emb_head.weight, 0)
@@ -183,7 +182,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         contrastive_loss = None
         contrastive_indices = torch.where(labels == embed_index)[0]
 
-        contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
+        contrastive_hidden_states = hidden_states[contrastive_indices]
         contrastive_labels = labels[contrastive_indices] if labels is not None else None
 
         if has_hard_negative:
