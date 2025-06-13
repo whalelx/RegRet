@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F 
 from accelerate import Accelerator
 import accelerate
+from tqdm import tqdm
 
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
@@ -58,11 +59,14 @@ def compute_recall_at_k(relevant_docs, retrieved_indices, k):
 
     # Check if there is an intersection between relevant docs and top k retrieved docs
     # If there is, we return 1, indicating successful retrieval; otherwise, we return 0
-    if relevant_docs_set.intersection(top_k_retrieved_indices_set):
-        return 1.0
-    else:
-        return 0.0
-
+    result = []
+    for x in relevant_docs_set:
+        filtered_top_k = top_k_retrieved_indices_set - (relevant_docs_set - {x})
+        if x in filtered_top_k:
+            result.append(1.0)
+        else:
+            result.append(0.0)
+    return result
 
 def eval(args):
     original_model_id = args.original_model_id
@@ -133,7 +137,6 @@ def eval(args):
     candidate_features = []
     candidate_ids = []
 
-    from tqdm import tqdm 
     with torch.no_grad():
         query_dataloader, candidate_dataloader, model = accelerator.prepare(query_dataloader, candidate_dataloader, model)
 
@@ -210,7 +213,7 @@ def eval(args):
             retrieved_indices_for_qid = cand_names[ind]
             for k in k_lists:
                 recall_at_k = compute_recall_at_k(relevant_docs, retrieved_indices_for_qid, k)
-                res[f'recall_{k}'].append(recall_at_k)
+                res[f'recall_{k}'].extend(recall_at_k)
 
         for k in k_lists:
             print(f"recall_at_{k} = {sum(res[f'recall_{k}']) / len(res[f'recall_{k}'])}")
