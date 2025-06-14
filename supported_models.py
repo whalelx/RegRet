@@ -10,7 +10,8 @@ MODULE_KEYWORDS: Dict[str, Dict[str, List]] = {
         "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
         "vision_projector": ["visual.merger"],
         "llm": ["model"],
-        "llm_heads": ["emb_head", "llm_head"]
+        "llm_heads": ["lm_head"],
+        "trainable_modules": ["emb_head", "meta_query"]
     },
 }
 

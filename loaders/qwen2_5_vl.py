@@ -28,8 +28,9 @@ class Qwen2_5VLModelLoader(BaseModelLoader):
         if num_new_tokens == 0:  # if the emb is already in the tokenizer
             return
         assert len(emb_tokens) == num_new_tokens, f"{len(emb_tokens)} not equals {num_new_tokens}"
-
-        model.resize_token_embeddings(len(tokenizer))
+        
+        # only change the tokenizer, keep the original embeddings
+        # model.resize_token_embeddings(len(tokenizer))
 
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids

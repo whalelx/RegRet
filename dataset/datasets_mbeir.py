@@ -6,6 +6,8 @@ import random
 
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
+old_query = {"type": "text", "text": f"<emb>."}
+meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(1, 256)])}
 
 class LazySupervisedDataset(Dataset):
     """
@@ -47,7 +49,7 @@ class LazySupervisedDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -62,7 +64,7 @@ class LazySupervisedDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -78,7 +80,7 @@ class LazySupervisedDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -167,7 +169,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -182,7 +184,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -198,7 +200,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -272,7 +274,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -287,7 +289,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -303,7 +305,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]

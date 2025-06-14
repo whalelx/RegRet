@@ -29,16 +29,33 @@ class ExtraLossOutput(SequenceClassifierOutput):
     loss_emb: torch.FloatTensor = None
     loss_gen: torch.FloatTensor = None
 
+class EmbedHead(nn.Module):
+    def __init__(self, hidden_size, num_meta_queries, bias=True):
+        super().__init__()
+        self.linear = nn.Linear(hidden_size, hidden_size, bias=bias)
+        self.num_meta_queries = num_meta_queries
+        self._init_weights()
+
+    def _init_weights(self):
+        nn.init.normal_(self.linear.weight, std=0.01)
+        nn.init.constant_(self.linear.bias, 0)
+
+    def forward(self, embeds):
+        embeds = embeds.view(embeds.shape[0], self.num_meta_queries, -1)
+        embeds = self.linear(embeds.mean(dim=1))
+        return embeds
+
 class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
     def __init__(self, config):
         super().__init__(config)
-        self.emb_head = nn.Linear(config.hidden_size, config.hidden_size, bias=True)
-        self._init_embhead_weights()
+        self.num_meta_queries = 256
+        self.meta_query = nn.Embedding(self.num_meta_queries, config.hidden_size)
+        self.emb_head = EmbedHead(config.hidden_size, self.num_meta_queries, bias=True)
+        self._init_meta_query_weights()
 
-    def _init_embhead_weights(self):
-        nn.init.constant_(self.emb_head.weight, 0)
-        nn.init.constant_(self.emb_head.bias, 0)
+    def _init_meta_query_weights(self):
+        nn.init.normal_(self.meta_query.weight, std=0.01)
 
     def forward(
         self,
@@ -73,6 +90,16 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
         if inputs_embeds is None:
             inputs_embeds = self.model.embed_tokens(input_ids)
+            ### gen meta queries ###
+            meta_query_ids = torch.arange(self.num_meta_queries, device=inputs_embeds.device).unsqueeze(0).expand(inputs_embeds.shape[0], -1)
+            meta_query_embeds = self.meta_query(meta_query_ids)  # [B, num_meta_queries, hidden_size]
+            mask = input_ids == self.config.emb_token_ids[0]  # [B, L]
+            mask_unsqueezed = mask.unsqueeze(-1)  # [B, L, 1]
+            mask_expanded = mask_unsqueezed.expand_as(inputs_embeds)  # [B, L, hidden_size]
+            meta_mask = mask_expanded.to(inputs_embeds.device)
+            meta_query_embeds = meta_query_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
+            inputs_embeds = inputs_embeds.masked_scatter(meta_mask, meta_query_embeds)
+            ### gen meta queries end ###
             if pixel_values is not None:
                 pixel_values = pixel_values.type(self.visual.dtype)
                 image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
@@ -181,9 +208,9 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
         # contrastive learning
         contrastive_loss = None
-        contrastive_indices = torch.where(labels == embed_index)[0]
+        contrastive_indices = torch.where((labels == embed_index).any(1))[0] # TODO check
 
-        contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
+        contrastive_hidden_states = hidden_states[contrastive_indices]
         contrastive_labels = labels[contrastive_indices] if labels is not None else None
 
         if has_hard_negative:
@@ -195,7 +222,9 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
         if contrastive_labels is not None:
             embed_indices = torch.argmax((contrastive_labels == embed_index).int(), dim=1)
-            embed_features = contrastive_hidden_states[torch.arange(len(embed_indices)), embed_indices - 1] # (batch_size, embed_dim)
+            # TODO have not support hard negs yet
+            embed_features = contrastive_hidden_states[torch.arange(len(embed_indices)), embed_indices - 1:embed_indices - 1 + self.num_meta_queries] # (batch_size, embed_dim)
+            embed_features = self.emb_head(embed_features)
 
             if inference:
                 if ids is not None:

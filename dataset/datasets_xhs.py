@@ -4,6 +4,9 @@ from torch.utils.data import Dataset
 import random 
 from .datasets_mbeir import LazySupervisedDataset
 
+old_query = {"type": "text", "text": f"<emb>."}
+meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(1, 256)])}
+
 class XHSDataset(LazySupervisedDataset):
     """
     Dataset for supervised fine-tuning 
@@ -32,7 +35,7 @@ class XHSDataset(LazySupervisedDataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -47,7 +50,7 @@ class XHSDataset(LazySupervisedDataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
@@ -63,7 +66,7 @@ class XHSDataset(LazySupervisedDataset):
                 {
                     "role": "assistant",
                     "content": [
-                        {"type": "text", "text": f"<emb>."}
+                        meta_query
                     ]
                 },
             ]
