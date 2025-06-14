@@ -2,6 +2,8 @@ from typing import Dict, List
 from torch.utils.data import Dataset
 import pandas as pd 
 
+old_query = {"type": "text", "text": f"<emb>."}
+meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(0, 256)])}
 
 class LazySupervisedDataset(Dataset):
     """
@@ -29,7 +31,7 @@ class LazySupervisedDataset(Dataset):
             {
                 "role": "assistant",
                 "content": [
-                    {"type": "text", "text": f"<emb>."}
+                    meta_query
                 ]
             },
         ]

@@ -5,7 +5,7 @@ import random
 from .datasets_mbeir import LazySupervisedDataset
 
 old_query = {"type": "text", "text": f"<emb>."}
-meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(1, 256)])}
+meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(0, 256)])}
 
 class XHSDataset(LazySupervisedDataset):
     """

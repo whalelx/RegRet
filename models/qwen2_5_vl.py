@@ -223,7 +223,13 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         if contrastive_labels is not None:
             embed_indices = torch.argmax((contrastive_labels == embed_index).int(), dim=1)
             # TODO have not support hard negs yet
-            embed_features = contrastive_hidden_states[torch.arange(len(embed_indices)), embed_indices - 1:embed_indices - 1 + self.num_meta_queries] # (batch_size, embed_dim)
+            
+            batch_size = len(embed_indices)
+            indices_range = torch.arange(self.num_meta_queries).unsqueeze(0).expand(batch_size, -1).to(embed_indices.device)  # [batch_size, 256]
+            start_indices = (embed_indices - 1).unsqueeze(1)  # [batch_size, 1]
+            gather_indices = start_indices + indices_range  # [batch_size, 256]
+            embed_features = torch.gather(contrastive_hidden_states, 1, gather_indices.unsqueeze(-1).expand(-1, -1, contrastive_hidden_states.size(-1)))
+
             embed_features = self.emb_head(embed_features)
 
             if inference:

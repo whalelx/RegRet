@@ -7,7 +7,7 @@ import random
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
 old_query = {"type": "text", "text": f"<emb>."}
-meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(1, 256)])}
+meta_query = {"type": "text", "text": "".join([f"<emb>" for i in range(0, 256)])}
 
 class LazySupervisedDataset(Dataset):
     """
