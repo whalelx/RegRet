@@ -84,14 +84,14 @@ def eval(args):
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        assert len(emb_tokens) == num_new_tokens
+        # assert len(emb_tokens) == num_new_tokens
 
-        model.resize_token_embeddings(len(tokenizer))
+        # model.resize_token_embeddings(len(tokenizer))
 
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
 
-    # add_embed_token(tokenizer, model)
+    add_embed_token(tokenizer, model)
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 

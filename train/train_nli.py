@@ -81,20 +81,71 @@ def train():
     for param in model.parameters():
         param.requires_grad = False
 
-    # Only unfreeze embedding head and meta query
-    rank0_print("Unfreezing trainable modules...")
-    trainable_count = 0
-    total_params = 0
-    
-    for name, param in model.named_parameters():
-        total_params += param.numel()
-        if 'emb_head' in name or 'meta_query' in name:
-            param.requires_grad = True
-            trainable_count += param.numel()
-            rank0_print(f"\tUnfrozen: {name}")
-    
-    rank0_print(f"Total parameters: {total_params:,}")
-    rank0_print(f"Trainable parameters: {trainable_count:,} ({trainable_count/total_params*100:.2f}%)")
+    vision_projector_keys = MODULE_KEYWORDS[model_args.model_family_id]["vision_projector"]
+    if not training_args.train_vision_projector:
+        rank0_print(f"Vision projector is freezed... including:")
+        for module in vision_projector_keys:
+            rank0_print(f"\t{module}")
+            eval(f"model.{module}").requires_grad_(False)
+
+    # other components preparation (e.g., image_newline, vision_resampler)
+    # we will just freeze these
+    if "others" in MODULE_KEYWORDS[model_args.model_family_id]:
+        rank0_print(f"Other multimodal component is freezed... including:")
+        for other_key in MODULE_KEYWORDS[model_args.model_family_id]["others"]:
+            rank0_print(f"\t{other_key}")
+            eval(f"model.{other_key}").requires_grad_(False)
+
+    # lora preparation
+    llm_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm"]
+    llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
+    if not (lora_args.use_lora or (training_args.train_vision_encoder and lora_args.use_vision_lora)):
+        rank0_print("No LoRA enabled...")        
+    else:
+        named_modules = {n: m for n, m in model.named_modules()}
+        lora_modules = []
+        full_modules = []
+
+        if training_args.train_vision_encoder and lora_args.use_vision_lora:
+            rank0_print("LoRA for vision encoder enabled...")
+            lora_modules.extend(find_all_linear_names(named_modules, vision_encoder_keys))
+        elif training_args.train_vision_encoder:
+            rank0_print("Vision encoder will be fully trained...")
+            full_modules.extend(vision_encoder_keys)
+        
+        if lora_args.use_lora:
+            rank0_print("LoRA for LLM enabled...")
+            lora_modules.extend(find_all_linear_names(named_modules, llm_keys))
+        else:
+            rank0_print("LLM will be fully trained...")
+            full_modules.extend(llm_keys)
+        
+        if training_args.train_vision_projector:
+            rank0_print("Vision projector will be fully trained...")
+            full_modules.extend(vision_projector_keys)
+
+        # Always fully train the embedding head for contrastive learning
+        rank0_print("Embedding/Language head will be fully trained...")
+        full_modules.extend(llm_heads_keys)
+        trainable_modules_keys = MODULE_KEYWORDS[model_args.model_family_id]["trainable_modules"]
+        full_modules.extend(trainable_modules_keys)
+
+        lora_config = LoraConfig(
+            r=lora_args.lora_r,
+            lora_alpha=lora_args.lora_alpha,
+            target_modules=lora_modules,
+            modules_to_save=full_modules,
+            lora_dropout=lora_args.lora_dropout,
+            bias=lora_args.lora_bias,
+            task_type="CAUSAL_LM",
+        )
+
+        if lora_args.q_lora:
+            model = prepare_model_for_kbit_training(
+                model, use_gradient_checkpointing=training_args.gradient_checkpointing
+            )
+            
+        model = get_peft_model(model, lora_config)
         
     # print trainable parameters for inspection
     rank0_print("Trainable parameters:")
