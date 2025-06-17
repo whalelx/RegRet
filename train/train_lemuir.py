@@ -102,8 +102,8 @@ def train():
             trainable_count += param.numel()
             rank0_print(f"\tUnfrozen: {name}")
     
-    rank0_print(f"Total parameters: {total_params:,}")
-    rank0_print(f"Trainable parameters: {trainable_count:,} ({trainable_count/total_params*100:.2f}%)")
+    # rank0_print(f"Total parameters: {total_params:,}")
+    # rank0_print(f"Trainable parameters: {trainable_count:,} ({trainable_count/total_params*100:.2f}%)")
         
     # print trainable parameters for inspection
     rank0_print("Trainable parameters:")
