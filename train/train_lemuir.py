@@ -156,6 +156,7 @@ def train():
         # Always fully train the embedding head for contrastive learning
         rank0_print("Embedding/Language head will be fully trained...")
         full_modules.extend(llm_heads_keys)
+        full_modules.extend(["emb_head.norm"])
 
         lora_config = LoraConfig(
             r=lora_args.lora_r,

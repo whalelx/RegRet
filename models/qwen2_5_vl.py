@@ -29,16 +29,55 @@ class ExtraLossOutput(SequenceClassifierOutput):
     loss_emb: torch.FloatTensor = None
     loss_gen: torch.FloatTensor = None
 
+import copy
+from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLDecoderLayer, Qwen2RMSNorm
+class EmbeddingHead(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        # self.emb_head = nn.Linear(config.hidden_size, config.hidden_size, bias=True)
+        assert config._attn_implementation == "flash_attention_2"
+        self.decoder_layers = torch.nn.ModuleList([Qwen2_5_VLDecoderLayer(config, 29)])
+        self.norm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        # enable double attention
+        self.decoder_layers[0].self_attn.is_causal = False
+        
+    def forward(self, hidden_states, inputs_embeds, attention_mask, position_ids, model_ref):
+        # This part is shared by all layers in Qwen pretrain model
+        # attention_mask shape 120, 365
+        past_seen_tokens = 0
+        cache_position = torch.arange(
+            past_seen_tokens, past_seen_tokens + hidden_states.shape[1], device=hidden_states.device
+        )
+        causal_mask = model_ref._update_causal_mask(
+            attention_mask, inputs_embeds, cache_position, past_key_values=None, output_attentions=False
+        )
+        position_embeddings = model_ref.rotary_emb(hidden_states, position_ids)
+
+        for decoder_layer in self.decoder_layers:
+            # if self.gradient_checkpointing and self.training: for simplicity, we don't use gradient checkpointing
+            # try to enable this when using larger models
+            layer_outputs = decoder_layer(
+                hidden_states,
+                attention_mask=causal_mask,
+                position_ids=position_ids,
+                past_key_value=None,
+                output_attentions=False,
+                use_cache=False,
+                cache_position=cache_position,
+                position_embeddings=position_embeddings,
+            )
+            hidden_states = layer_outputs[0]
+
+        hidden_states = self.norm(hidden_states)
+        # return self.emb_head(hidden_states)
+        return hidden_states
+
 class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
 
     def __init__(self, config):
         super().__init__(config)
-        self.emb_head = nn.Linear(config.hidden_size, config.hidden_size, bias=True)
-        self._init_embhead_weights()
-
-    def _init_embhead_weights(self):
-        nn.init.constant_(self.emb_head.weight, 0)
-        nn.init.constant_(self.emb_head.bias, 0)
+        self.emb_head = EmbeddingHead(config)
+        self.embed_space_layer = -2
 
     def forward(
         self,
@@ -151,16 +190,16 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
             inputs_embeds=inputs_embeds,
             use_cache=use_cache,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=True,
             return_dict=return_dict,
             cache_position=cache_position,
         )
 
-        hidden_states = outputs[0]
-
         embed_index = self.config.emb_token_ids[0]
         
         # language generation
+        hidden_states = outputs[0]
+
         language_loss = None
         language_indices = torch.where((labels != embed_index).all(1))[0]
         if language_indices is not None and len(language_indices) > 0:
@@ -180,10 +219,18 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
                 language_loss = loss_fct(shift_logits, shift_labels)
 
         # contrastive learning
+
+        # len of outputs: sometimes 3, sometimes 2? TODO
+        hidden_states = outputs[-1][self.embed_space_layer]
+
         contrastive_loss = None
         contrastive_indices = torch.where(labels == embed_index)[0]
 
-        contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
+        contrastive_hidden_states = self.emb_head(
+            hidden_states, inputs_embeds, attention_mask, position_ids, self.model
+        )
+
+        contrastive_hidden_states = contrastive_hidden_states[contrastive_indices]
         contrastive_labels = labels[contrastive_indices] if labels is not None else None
 
         if has_hard_negative:

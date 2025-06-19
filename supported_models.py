@@ -9,8 +9,8 @@ MODULE_KEYWORDS: Dict[str, Dict[str, List]] = {
     "qwen2_5-vl-7b": {
         "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
         "vision_projector": ["visual.merger"],
-        "llm": ["model"],
-        "llm_heads": ["emb_head", "llm_head"]
+        "llm": ["model", "emb_head"],
+        "llm_heads": ["lm_head"]
     },
 }
 

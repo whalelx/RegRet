@@ -26,7 +26,7 @@ IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH=./checkpoints/LEMUIR_Pretrain
+MODEL_LOCAL_PATH=./checkpoints/Higher_Pretrain
 
 TRAIN_VISION_ENCODER=False                              
 USE_VISION_LORA=False                                  
@@ -36,11 +36,11 @@ USE_LORA=True
 Q_LORA=False                                           
 LORA_R=128                                                
 LORA_ALPHA=256                                           
-RUN_ID=${MODEL_ID}_LEMUIR_tune
+RUN_ID=${MODEL_ID}_Higher_tune
 
 DS_STAGE=zero3
-PER_DEVICE_BATCH_SIZE=80
-GRAD_ACCUM=2                                         
+PER_DEVICE_BATCH_SIZE=65
+GRAD_ACCUM=2               
 NUM_EPOCHS=1                                         
 
 LR=0.00011

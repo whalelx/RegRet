@@ -120,7 +120,7 @@ def find_all_linear_names(named_modules: Dict, target_modules: List[str]):
             lora_module_names.add(name)
 
     for name in list(lora_module_names):
-        if 'lm_head' in name or "emb_head" in name: # needed for 16-bit
+        if 'lm_head' in name: # needed for 16-bit
             lora_module_names.remove(name)
 
     return list(lora_module_names)
