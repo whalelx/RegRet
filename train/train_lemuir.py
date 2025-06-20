@@ -208,7 +208,7 @@ def train():
         instructions_path=data_args.instructions_path,
         image_path_prefix=data_args.image_path_prefix,
         tokenizer=tokenizer,
-        max_length=110000
+        max_length=90000
     )
     # mmeb_dataset = MMEBDataset(
     #     data_path=data_args.mmeb_data_path,
@@ -216,8 +216,8 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset])
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset])
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     
     eval_dataset = None
