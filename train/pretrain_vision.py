@@ -26,14 +26,13 @@ from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
 # from dataset.datasets_mmeb import MMEBDataset
+from dataset.dataset_fgclip import FGCLIPBboxDataset, FGCLIPDataCollator
 from loaders import LOADERS
 from supported_models import MODULE_KEYWORDS
 from utils import (
     rank0_print, find_all_linear_names, safe_save_model_for_hf_trainer,
     get_peft_state_maybe_zero_3
 )
-
-from trainer import CustomTrainer
 
 def setup_debugpy(local_rank):
     import torch.distributed as dist
@@ -61,12 +60,14 @@ def train():
     yaml.dump(asdict(lora_args), open(args_dir / "lora.yaml", "w"))
 
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
-    if getattr(training_args, 'deepspeed', None) and getattr(lora_args, 'q_lora', False):
+    
+    # Enable DeepSpeed if specified
+    if getattr(training_args, 'deepspeed', None):
         training_args.distributed_state.distributed_type = DistributedType.DEEPSPEED
-
+    
     device_map = None
     bnb_config = None
-    
+
     # load model, tokenizer, processor
     rank0_print("Loading model, tokenizer, processor...")
     loader = LOADERS[model_args.model_family_id](
@@ -85,25 +86,30 @@ def train():
 
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
-    for name, param in model.named_parameters():
-        param.requires_grad__(False)
-
 
     # freeze certain params
-    vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
+    # vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
+    # if not training_args.train_vision_encoder:
+    #     rank0_print(f"Vision encoder is freezed... including:")
+    #     for module in vision_encoder_keys:
+    #         rank0_print(f"\t{module}")
+    #         eval(f"model.{module}").requires_grad_(False)
+    for name, param in model.named_parameters():
+        param.requires_grad_(False)
 
-    rank0_print(f"ctx encoder is freezed... including:")
-    for module in vision_encoder_keys:
+    ctx_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
+    rank0_print(f"ctx encoder is enabled... including:")
+    for module in ctx_encoder_keys:
         rank0_print(f"\t{module}")
         eval(f"model.{module}").requires_grad_(True)
 
     vision_projector_keys = MODULE_KEYWORDS[model_args.model_family_id]["vision_projector"]
     if training_args.train_vision_projector:
-        rank0_print(f"Vision projector is freezed... including:")
+        rank0_print(f"Vision projector is enabled... including:")
         for module in vision_projector_keys:
             rank0_print(f"\t{module}")
-            eval(f"model.{module}").requires_grad_(True)
-
+            eval(f"model.{module}").requires_grad_(False)
+        
     # print trainable parameters for inspection
     rank0_print("Trainable parameters:")
     for name, param in model.named_parameters():
@@ -112,27 +118,15 @@ def train():
 
     # load data
     rank0_print("Loading data...")
-    dam_dataset = DAMDataset(
-        data_path=data_args.dam_data_path,
-        max_length=data_args.dam_max_samples
-    )
-    mbeir_language_dataset = MbeirLanguageDataset(
-        query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
+    mbeir_dataset = LazySupervisedDataset(
+        query_data_path=data_args.query_data_path,
         cand_pool_path=data_args.cand_pool_path,
         instructions_path=data_args.instructions_path,
         image_path_prefix=data_args.image_path_prefix,
         tokenizer=tokenizer,
-        max_length=110000
     )
-    # mmeb_dataset = MMEBDataset(
-    #     data_path=data_args.mmeb_data_path,
-    #     type=data_args.mmeb_type,
-    #     mode=data_args.mmeb_mode,
-    #     max_samples=data_args.mmeb_max_samples
-    # )
-    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset])
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset])
     
     eval_dataset = None
     training_args.eval_strategy = "no"

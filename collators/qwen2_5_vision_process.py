@@ -122,8 +122,10 @@ def fetch_image(ele: dict[str, str | Image.Image], size_factor: int = IMAGE_FACT
     if image_obj is None:
         raise ValueError(f"Unrecognized image input, support local path, http url, base64 and PIL.Image, got {image}")
     image = to_rgb(image_obj)
-    if "box" in ele:
-        if ele["box"] is None: pass
+    if "box" in ele and box_op != "none":
+        if ele["box"] is None:
+            if box_op == "crop-ret-none":
+                return None
         else:
             width, height = image.size
             x0 = width * ele["box"][0]
@@ -131,7 +133,7 @@ def fetch_image(ele: dict[str, str | Image.Image], size_factor: int = IMAGE_FACT
             x1 = width * ele["box"][2]
             y1 = height * ele["box"][3]
 
-            if box_op == "crop":
+            if box_op == "crop" or box_op == "crop-ret-none":
                 image = image.crop((x0, y0, x1, y1))
             elif box_op == "draw":
                 draw = ImageDraw.Draw(image)
@@ -379,6 +381,7 @@ def extract_vision_info(conversations: list[dict] | list[list[dict]]) -> list[di
 def process_vision_info(
     conversations: list[dict] | list[list[dict]],
     return_video_kwargs: bool = False,
+    box_op: str = "draw",
 ) -> tuple[list[Image.Image] | None, list[torch.Tensor | list[Image.Image]] | None, Optional[dict]]:
 
     vision_infos = extract_vision_info(conversations)
@@ -388,7 +391,7 @@ def process_vision_info(
     video_sample_fps_list = []
     for vision_info in vision_infos:
         if "image" in vision_info or "image_url" in vision_info:
-            image_inputs.append(fetch_image(vision_info))
+            image_inputs.append(fetch_image(vision_info, box_op=box_op))
         elif "video" in vision_info:
             video_input, video_sample_fps = fetch_video(vision_info, return_video_sample_fps=True)
             video_sample_fps_list.append(video_sample_fps)
@@ -402,3 +405,31 @@ def process_vision_info(
     if return_video_kwargs:
         return image_inputs, video_inputs, {'fps': video_sample_fps_list}
     return image_inputs, video_inputs
+
+
+def process_vision_info_with_focal(
+    conversations: list[dict] | list[list[dict]],
+    return_video_kwargs: bool = False,
+    box_op: str = "draw",
+) -> tuple[list[Image.Image] | None, list[torch.Tensor | list[Image.Image]] | None, Optional[dict]]:
+
+    vision_infos = extract_vision_info(conversations)
+    ## Read images or videos
+
+    image_nofocal = []
+    image_focal_full = []
+    image_focal_crop = []
+    id_nofocal = []
+    id_focal = []
+
+    for i, vision_info in enumerate(vision_infos):
+        if "image" in vision_info or "image_url" in vision_info:
+            if vision_info["box"] is None:
+                image_nofocal.append(fetch_image(vision_info, box_op="none"))
+                id_nofocal.append(i)
+            else:
+                image_focal_crop.append(fetch_image(vision_info, box_op="crop"))
+                image_focal_full.append(fetch_image(vision_info, box_op="none"))
+                id_focal.append(i)
+    resort_id = id_nofocal+id_focal
+    return image_nofocal, image_focal_full, image_focal_crop, resort_id

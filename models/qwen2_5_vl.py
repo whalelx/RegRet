@@ -9,6 +9,8 @@ from torch import nn
 import torch.distributed as dist
 from transformers.modeling_outputs import SequenceClassifierOutput
 import torch.nn.functional as F
+from dataclasses import dataclass
+from .vision_backbone import Qwen2_5_ContextVisionTransformerPretrainedModel
 
 class Similarity(nn.Module):
     """
@@ -23,7 +25,6 @@ class Similarity(nn.Module):
     def forward(self, x, y):
         return self.cos(x, y) / self.temp
 
-from dataclasses import dataclass
 @dataclass
 class ExtraLossOutput(SequenceClassifierOutput):
     loss_emb: torch.FloatTensor = None
@@ -35,6 +36,8 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         super().__init__(config)
         self.emb_head = nn.Linear(config.hidden_size, config.hidden_size, bias=True)
         self._init_embhead_weights()
+
+        self.visual = Qwen2_5_ContextVisionTransformerPretrainedModel._from_config(config.vision_config)
 
     def _init_embhead_weights(self):
         nn.init.constant_(self.emb_head.weight, 0)
@@ -63,7 +66,13 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         has_hard_negative=False,
         qids=None,
         dids=None,
-        ids=None
+        ids=None,
+        focal_pixel_values=None,
+        focal_image_grid_thw=None,
+        focal_image_ids=None,
+        focal_pixel_values_videos=None,
+        focal_video_grid_thw=None,
+        real_image_grid_thw=None,
     ):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -75,7 +84,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
             inputs_embeds = self.model.embed_tokens(input_ids)
             if pixel_values is not None:
                 pixel_values = pixel_values.type(self.visual.dtype)
-                image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+                image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw, focal_pixel_values=focal_pixel_values, focal_image_grid_thw=focal_image_grid_thw, focal_image_ids=focal_image_ids)
                 n_image_tokens = (input_ids == self.config.image_token_id).sum().item()
                 n_image_features = image_embeds.shape[0]
                 if n_image_tokens != n_image_features:
@@ -122,7 +131,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
             ):
                 position_ids, rope_deltas = self.get_rope_index(
                     input_ids,
-                    image_grid_thw,
+                    real_image_grid_thw,
                     video_grid_thw,
                     second_per_grid_ts,
                     attention_mask,
