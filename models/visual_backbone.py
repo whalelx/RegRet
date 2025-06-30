@@ -127,7 +127,7 @@ class Qwen2_5_ContextVisionBlock(nn.Module):
         assert attn_implementation == "flash_attention_2", "Unsupport attention implementation in ViT."
         self.cross_attn = ContextCrossAttentionFlashAttention2(config.hidden_size, num_heads=config.num_heads)
         self.mlp = Qwen2_5_ContextVisionMLP(config, bias=True)
-        self.residual_dropout = nn.Dropout(0.0) # TODO 0.0
+        # self.residual_dropout = nn.Dropout(0.0) # TODO 0.0
 
         self.register_parameter("attn_factor", nn.Parameter(torch.zeros((1,)).view(())))
         self.register_parameter("mlp_factor", nn.Parameter(torch.zeros((1,)).view(())))
@@ -153,7 +153,8 @@ class Qwen2_5_ContextVisionBlock(nn.Module):
         )
 
         # NOTE Dropping the residual: let the model leverage more on the context
-        hidden_states = self.residual_dropout(residual) + self.attn_factor * hidden_states
+        # hidden_states = self.residual_dropout(residual) + self.attn_factor * hidden_states
+        hidden_states = residual + self.attn_factor * hidden_states
 
         residual = hidden_states
         hidden_states = self.mlp(self.norm2(hidden_states))
