@@ -5,6 +5,7 @@ from transformers.utils import logging
 logger = logging.get_logger(__name__)
 
 from transformers import Qwen2_5_VLForConditionalGeneration
+from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLCausalLMOutputWithPast
 from torch import nn
 import torch.distributed as dist
 from transformers.modeling_outputs import SequenceClassifierOutput
@@ -168,6 +169,17 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         hidden_states = outputs[0]
 
         embed_index = self.config.emb_token_ids[0]
+
+        if labels is None and not inference: # HACK inference==True means using embedding as output
+            logits = self.lm_head(hidden_states)
+            return Qwen2_5_VLCausalLMOutputWithPast(
+                loss=0,
+                logits=logits,
+                past_key_values=outputs.past_key_values,
+                hidden_states=outputs.hidden_states,
+                attentions=outputs.attentions,
+                rope_deltas=self.rope_deltas,
+            )
         
         # language generation
         language_loss = None
