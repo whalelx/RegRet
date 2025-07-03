@@ -57,6 +57,7 @@ class DAMDataset(Dataset):
         mode: str='draw', # ['crop', 'draw']
         max_length: int = 100000,
         text_truncate_length: int = 512,
+        inference: bool = False
     ) -> None:
         super(DAMDataset, self).__init__()
         # 'SAM' is too large, 'SAV' caption is missing, because it's a vedio dataset
@@ -70,6 +71,7 @@ class DAMDataset(Dataset):
 
         self.mode = mode
         self.text_truncate_length = text_truncate_length
+        self.inference = inference
 
     def __len__(self) -> int:
         return self.max_length
@@ -123,6 +125,8 @@ class DAMDataset(Dataset):
                 ]
             },
         ]
+        if self.inference:
+            message = [message[0]]
         return message
 
     def get_instance(self, index):

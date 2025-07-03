@@ -21,6 +21,8 @@ for blk, ctx in zip(base_model.visual.blocks, base_model.visual.context_layers):
     ctx.norm2.load_state_dict(copy.deepcopy(blk.norm2.state_dict()))
     ctx.mlp.load_state_dict(copy.deepcopy(blk.mlp.state_dict()))
     ctx.cross_attn.proj.load_state_dict(copy.deepcopy(blk.attn.proj.state_dict()))
+    ctx.attn_factor.data.zero_()
+    ctx.mlp_factor.data.zero_()
     # ctx.cross_attn.q_proj.load_state_dict(copy.deepcopy(blk.attn.q_proj.state_dict()))
     # ctx.cross_attn.kv_proj.load_state_dict(copy.deepcopy(blk.attn.kv_proj.state_dict()))
 
@@ -32,7 +34,7 @@ for blk, ctx in zip(base_model.visual.blocks, base_model.visual.context_layers):
     if ctx.cross_attn.kv_proj.bias is not None:
         ctx.cross_attn.kv_proj.bias.data.zero_()
 
-breakpoint()
+
 
 # print(base_model.visual.context_layers[0].norm1.weight)
 base_model.save_pretrained(save_dir)

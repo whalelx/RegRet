@@ -117,7 +117,8 @@ def train():
     rank0_print("Loading data...")
     dam_dataset = DAMDataset(
         data_path=data_args.dam_data_path,
-        max_length=data_args.dam_max_samples
+        max_length=data_args.dam_max_samples,
+        mode = 'crop',
     )
     # mbeir_language_dataset = MbeirLanguageDataset(
     #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
