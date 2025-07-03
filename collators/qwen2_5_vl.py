@@ -27,7 +27,11 @@ class Qwen2_5VLDataCollator(BaseDataCollator):
         new_messages = []
         for category in range(category_size):
             for item in messages:
-                new_messages.append(item[category])
+                d=item[category]
+                if d is not None:
+                    new_messages.append(d)
+                else:
+                    pass
 
 
         image_nofocal, image_focal_full, image_focal_crop, resort_id = process_vision_info_with_focal(new_messages, box_op="crop")
