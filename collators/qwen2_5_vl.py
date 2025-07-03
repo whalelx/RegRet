@@ -24,7 +24,11 @@ class Qwen2_5VLDataCollator(BaseDataCollator):
         new_messages = []
         for category in range(category_size):
             for item in messages:
-                new_messages.append(item[category])
+                d=item[category]
+                if d is not None:
+                    new_messages.append(d)
+                else:
+                    pass
 
         texts = [
             self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=False)

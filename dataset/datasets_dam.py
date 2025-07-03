@@ -32,7 +32,7 @@ def visualize_mask_on_image_pil(original_pil, binary_mask_np,
 def mask2box(mask):
     box = None
     pos = np.where(mask > 0)
-    width, height = mask.shape
+    height, width = mask.shape
 
     if pos[0].size > 0 and pos[1].size > 0:
         x_min = np.min(pos[1]) / width
@@ -54,17 +54,22 @@ class DAMDataset(Dataset):
     def __init__(
         self, 
         data_path: str, 
-        mode: str='pretrained',
+        mode: str='draw', # ['crop', 'draw']
         max_length: int = 100000,
+        text_truncate_length: int = 512,
     ) -> None:
         super(DAMDataset, self).__init__()
         # 'SAM' is too large, 'SAV' caption is missing, because it's a vedio dataset
-        self.split_names =  ['COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO'] 
-        self.dataset = {k: load_dataset(data_path, k) for k in self.split_names}
+        self.split_names =  ['COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO', "SAM"] 
+        self.dataset = {k: load_dataset(data_path, k, num_proc=16) for k in self.split_names}
         self.lengths = [len(self.dataset[n]['train']) for n in self.split_names]
+        self.mode = mode
         self.max_length = max_length
+        if max_length<=0:
+            self.max_length = sum(self.lengths) // 2
 
         self.mode = mode
+        self.text_truncate_length = text_truncate_length
 
     def __len__(self) -> int:
         return self.max_length
@@ -76,6 +81,12 @@ class DAMDataset(Dataset):
             else:
                 index -= ds
 
+    def get_prompt(self):
+        if self.mode == 'crop':
+            return 'Describe the image in detail.'
+        elif self.mode == 'draw':
+            return "Describe the region in the image bounded by a red box."
+
     def construct_messages(self, idx: int):
         i, index = self.get_dataset_idx(idx)
         splitname = self.split_names[i]
@@ -84,15 +95,25 @@ class DAMDataset(Dataset):
         text = anno['caption']
         mask = counts_to_mask(anno['mask_rle'])
         box = mask2box(mask)
+        image = item['jpg']
+        w,h = image.size
+        delta = min((box[2]-box[0])*w, (box[3]-box[1])*h)
+        wb, hb = (box[2]-box[0])*w, (box[3]-box[1])*h
+        ratio = max(hb, wb) / min(hb, wb)
+        if delta < 10 or ratio > 200: # MAX_RATIO
+            return None
         image = lower_resolution(item['jpg'])
         # image = visualize_mask_on_image_pil(item['jpg'], mask)
+
+        if len(text) > self.text_truncate_length:
+            text = text[:self.text_truncate_length]
 
         message = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image", "image": image, "box": box},
-                    {"type": "text", "text": f"\nDescribe the region in the image bounded by a red box."}
+                    {"type": "text", "text": f"\n{self.get_prompt()}"}
                 ]
             },
             {
@@ -110,7 +131,7 @@ class DAMDataset(Dataset):
         return message 
 
     def __getitem__(self, i) -> Dict[str, List]: 
-        j = i + self.max_length
+        j = i * 2 + 1
         return self.get_instance(i), self.get_instance(j)
 
 
