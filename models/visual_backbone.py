@@ -270,24 +270,25 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
                 cu_seqlens_now = cu_seqlens
             else:
                 cu_seqlens_now = cu_window_seqlens
-            if self.gradient_checkpointing and self.training:
-                hidden_states = self._gradient_checkpointing_func(
-                    blk.__call__, hidden_states, cu_seqlens_now, None, position_embeddings
-                )
-            else:
-                hidden_states = blk(hidden_states, cu_seqlens=cu_seqlens_now, position_embeddings=position_embeddings)
+            # if self.gradient_checkpointing and self.training:
+            #     hidden_states = self._gradient_checkpointing_func(
+            #         blk.__call__, hidden_states, cu_seqlens_now, None, position_embeddings
+            #     )
+            # else:
+            hidden_states = blk(hidden_states, cu_seqlens=cu_seqlens_now, position_embeddings=position_embeddings)
 
             if context_feature is not None:
                 # have to use full attention TODO
                 cu_seqlens_kv_now = cu_seqlens_kv
                 cu_seqlens_now = cu_seqlens
                 context_layer = self.context_layers[layer_num]
-                if self.gradient_checkpointing and self.training:
-                    hidden_states = self._gradient_checkpointing_func(
-                        context_layer.__call__, hidden_states, cu_seqlens_now, cu_seqlens_kv_now, None, position_embeddings, context_feature
-                    )
-                else:
-                    hidden_states = context_layer(hidden_states, cu_seqlens=cu_seqlens_now, cu_seqlens_kv=cu_seqlens_kv_now, position_embeddings=position_embeddings, context_feature=context_feature)
+                # if self.gradient_checkpointing and self.training:
+                #     hidden_states = self._gradient_checkpointing_func(
+                #         context_layer.__call__, hidden_states, cu_seqlens_now, cu_seqlens_kv_now, None, position_embeddings, context_feature
+                #     )
+                # else:
+                # BUG : cannot backward when using gradient checkpointing
+                hidden_states = context_layer(hidden_states, cu_seqlens=cu_seqlens_now, cu_seqlens_kv=cu_seqlens_kv_now, position_embeddings=position_embeddings, context_feature=context_feature)
 
         return hidden_states, window_index
     
