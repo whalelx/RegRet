@@ -1,8 +1,8 @@
 IMAGE_PATH_PREFIX=/mnt/tidal-alsh01/dataset/mmeb/M-BEIR
 # MODEL_ID="./checkpoints/qwen2_5-vl-7b_LEMUIR_tune_genloss0.3"
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune"
-# MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_nodam"  # basline
-MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_bs120"  # language
+MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_nodam"  # basline
+# MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_bs120"  # language
 
 ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
 
@@ -10,7 +10,7 @@ ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_genloss0.3_mbeirlanguage"
 
 
-python eval/eval_xhs.py \
+CUDA_VISIBLE_DEVICES='0,1,2,3,4,5,6,7' accelerate launch --multi_gpu --main_process_port 29509  eval/eval_xhs.py \
     --query_data_path ${IMAGE_PATH_PREFIX}/query/test/mbeir_xhs_task7_test.jsonl \
     --query_cand_pool_path ${IMAGE_PATH_PREFIX}/cand_pool/local/mbeir_xhs_task7_cand_pool.jsonl \
     --cand_pool_path ${IMAGE_PATH_PREFIX}/cand_pool/local/mbeir_xhs_task7_cand_pool.jsonl \

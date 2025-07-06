@@ -227,7 +227,7 @@ class QueryDataset(Dataset):
         instance = _prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix)
         # instance = _prepare_data_dict(query_txt_without_prompt, query_img_path, image_path_prefix)
         instance['qid'] = hash_qid(qid)
-        instance.update({"box": pos_cand.get("box", None)})
+        instance.update({"box": mbeir_entry.get("box", None)})
         return instance
 
     def __getitem__(self, i):
