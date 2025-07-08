@@ -110,8 +110,8 @@ def eval(args):
     query_data_collator = MbeirQueryDataCollator(tokenizer=tokenizer, processor=processor)
     cand_data_collator = MbeirCandidateDataCollator(tokenizer=tokenizer, processor=processor)
     
-    query_dataloader = DataLoader(query_dataset, batch_size=64, num_workers=16, shuffle=False, collate_fn=query_data_collator)
-    candidate_dataloader = DataLoader(cand_dataset, batch_size=64, num_workers=16, shuffle=False, collate_fn=cand_data_collator)
+    query_dataloader = DataLoader(query_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=query_data_collator)
+    candidate_dataloader = DataLoader(cand_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
 
     accelerator = Accelerator(mixed_precision='bf16')
     device = accelerator.device 

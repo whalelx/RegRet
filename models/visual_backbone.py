@@ -178,13 +178,10 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
             focal_image_ids,
             output_hidden_states=False, return_dict=True):
 
-        # focal_image_ids = torch.any((pixel_values[:, :4, ...] != pixel_values[:, 4:, ...]).flatten(start_dim=1), dim=1)
         full_image_feature, full_image_winidx = self.extract_feature(
             pixel_values,
             grid_thw
         )
-
-        focal_image_ids = focal_image_ids.to(full_image_feature.device)
 
         # re-sort
         seq_len = full_image_feature.shape[0]
@@ -192,6 +189,12 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
         reverse_indices = torch.argsort(full_image_winidx)
         full_image_feature = full_image_feature[reverse_indices, :, :]
         full_image_feature = full_image_feature.reshape(seq_len, -1)
+
+        if focal_image_ids is None or focal_image_ids.size(0) == 0:
+            full_image_feature = self.merger(full_image_feature)
+            return full_image_feature
+
+        focal_image_ids = focal_image_ids.to(full_image_feature.device)
         mask = self.gen_ctx_feature_mask(seq_len, focal_image_ids, grid_thw)
         context_feature = full_image_feature[mask, :]
 

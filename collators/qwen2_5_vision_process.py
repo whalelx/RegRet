@@ -360,11 +360,12 @@ def fetch_video(ele: dict, image_factor: int = IMAGE_FACTOR, return_video_sample
         return images
 
 
-def extract_vision_info(conversations: list[dict] | list[list[dict]]) -> list[dict]:
+def extract_vision_info(conversations: list[dict] | list[list[dict]], return_ids=False) -> list[dict]:
     vision_infos = []
     if isinstance(conversations[0], dict):
         conversations = [conversations]
-    for conversation in conversations:
+    list_ids = []
+    for i, conversation in enumerate(conversations):
         for message in conversation:
             if isinstance(message["content"], list):
                 for ele in message["content"]:
@@ -375,6 +376,9 @@ def extract_vision_info(conversations: list[dict] | list[list[dict]]) -> list[di
                         or ele["type"] in ("image", "image_url", "video")
                     ):
                         vision_infos.append(ele)
+                        list_ids.append(i)
+    if return_ids:
+        return vision_infos, list_ids, len(conversations)
     return vision_infos
 
 
@@ -413,7 +417,7 @@ def process_vision_info_with_focal(
     box_op: str = "draw",
 ) -> tuple[list[Image.Image] | None, list[torch.Tensor | list[Image.Image]] | None, Optional[dict]]:
 
-    vision_infos = extract_vision_info(conversations)
+    vision_infos, ids, batchsz = extract_vision_info(conversations, return_ids=True)
     ## Read images or videos
 
     image_nofocal = []
@@ -422,9 +426,9 @@ def process_vision_info_with_focal(
     id_nofocal = []
     id_focal = []
 
-    for i, vision_info in enumerate(vision_infos):
+    for i, vision_info in zip(ids, vision_infos):
         if "image" in vision_info or "image_url" in vision_info:
-            if vision_info["box"] is None:
+            if vision_info.get("box", None) is None:
                 image_nofocal.append(fetch_image(vision_info, box_op="none"))
                 id_nofocal.append(i)
             else:
@@ -432,4 +436,6 @@ def process_vision_info_with_focal(
                 image_focal_full.append(fetch_image(vision_info, box_op="none"))
                 id_focal.append(i)
     resort_id = id_nofocal+id_focal
+    other_id = [i for i in range(batchsz) if i not in resort_id]
+    resort_id = resort_id + other_id
     return image_nofocal, image_focal_full, image_focal_crop, resort_id

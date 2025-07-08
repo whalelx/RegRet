@@ -74,17 +74,17 @@ class Qwen2_5VLDataCollator(BaseDataCollator):
         # pixel values and image_grithw 真实可用的东西
 
         focal_crop_pixel_values = pixel_values[prefix_token_length:]
-        focal_crop_grid_thw = image_grid_thw[prefix_token_length:]
+        focal_crop_grid_thw = image_grid_thw[prefix_img_nums:]
 
         nofocal_full_pixel_values = pixel_values[:prefix_token_length]
-        nofocal_full_grid_thw = image_grid_thw[:prefix_token_length]
+        nofocal_full_grid_thw = image_grid_thw[:prefix_img_nums]
 
         focal_inputs = self.processor.image_processor(
             images=image_focal_full,
             return_tensors="pt",
         )
         focal_full_pixel_values =  focal_inputs.pixel_values
-        focal_full_grid_thw = focal_inputs.image_grid_thw
+        focal_full_grid_thw = focal_inputs.image_grid_thw.to(torch.int64)
 
         focal_image_ids = torch.arange(prefix_img_nums, prefix_img_nums + len(image_focal_full))
 

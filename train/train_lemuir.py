@@ -197,25 +197,25 @@ def train():
         image_path_prefix=data_args.image_path_prefix,
         tokenizer=tokenizer 
     )
-    dam_dataset = DAMDataset(
-        data_path=data_args.dam_data_path,
-        max_length=data_args.dam_max_samples
-    )
-    mbeir_language_dataset = MbeirLanguageDataset(
-        query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
-        cand_pool_path=data_args.cand_pool_path,
-        instructions_path=data_args.instructions_path,
-        image_path_prefix=data_args.image_path_prefix,
-        tokenizer=tokenizer,
-        max_length=110000
-    )
+    # dam_dataset = DAMDataset(
+    #     data_path=data_args.dam_data_path,
+    #     max_length=data_args.dam_max_samples
+    # )
+    # mbeir_language_dataset = MbeirLanguageDataset(
+    #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
+    #     cand_pool_path=data_args.cand_pool_path,
+    #     instructions_path=data_args.instructions_path,
+    #     image_path_prefix=data_args.image_path_prefix,
+    #     tokenizer=tokenizer,
+    #     max_length=110000
+    # )
     # mmeb_dataset = MMEBDataset(
     #     data_path=data_args.mmeb_data_path,
     #     type=data_args.mmeb_type,
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset])
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     
@@ -229,13 +229,11 @@ def train():
     )
 
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = CustomTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
-        extra_losses=["loss_emb", "loss_gen"],
-        language_ds_startidx=2
     )
     
     trainer.train()

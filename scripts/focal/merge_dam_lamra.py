@@ -19,29 +19,27 @@ from transformers.models.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
 import torch
 import copy
 
-save_dir = "./tmp_ckpts/dam_pretrain+lamrallm"
+# generate pretrain weights for mbeir finetuning
+save_dir = "./tmp_ckpts/dam_cvp_nilpretrain"
+lamra_model = "./checkpoints/LEMUIR_Pretrain"
+vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision_c+v+p_5e-5"
 
-base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained("./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision",low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
-lamra_ret = Qwen2_5_VLRetForConditionalGeneration.from_pretrained("./checkpoints/tempckpt",low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+# generate ctx only
+# save_dir = "./tmp_ckpts/dam_pretrain+lamrallm"
+# lamra_model = "./checkpoints/tempckpt"
+# vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision"
 
-lamra_ret.visual.context_layers.load_state_dict(copy.deepcopy(base_model.visual.context_layers.state_dict()))
+base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(vision_backbone,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+lamra_ret = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(lamra_model,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 
-# for blk, ctx in zip(base_model.visual.context_layers, lamra_ret.visual.context_layers):
-#     ctx.norm1.load_state_dict(copy.deepcopy(blk.norm1.state_dict()))
-#     ctx.norm2.load_state_dict(copy.deepcopy(blk.norm2.state_dict()))
-#     ctx.mlp.load_state_dict(copy.deepcopy(blk.mlp.state_dict()))
-#     ctx.cross_attn.load_state_dict(copy.deepcopy(blk.cross_attn.state_dict()))
-#     ctx.attn_factor.data.copy_(blk.attn_factor.data)
-#     ctx.mlp_factor.data.copy_(blk.mlp_factor.data)
-#     # ctx.cross_attn.q_proj.load_state_dict(copy.deepcopy(blk.attn.q_proj.state_dict()))
-#     # ctx.cross_attn.kv_proj.load_state_dict(copy.deepcopy(blk.attn.kv_proj.state_dict()))
+lamra_ret.visual.load_state_dict(copy.deepcopy(base_model.visual.state_dict()))
 
 print("@attn_factor: ", lamra_ret.visual.context_layers[0].attn_factor)
 print("@gt attn_factor: ", base_model.visual.context_layers[0].attn_factor)
 
 lamra_ret.save_pretrained(save_dir)
 
-base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained("./tmp_ckpts/dam_pretrain+lamrallm",low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(save_dir,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 breakpoint()
 
 processor = AutoProcessor.from_pretrained("./checkpoints/LEMUIR_Pretrain")
