@@ -182,18 +182,18 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         # contrastive learning
         contrastive_loss = None
         contrastive_indices = torch.where(labels == embed_index)[0]
-
-        contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
         contrastive_labels = labels[contrastive_indices] if labels is not None else None
 
-        if has_hard_negative:
-            contrastive_batch_size = len(contrastive_hidden_states) // 3
-        elif not inference:
-            contrastive_batch_size = len(contrastive_hidden_states) // 2
-        elif inference:
-            contrastive_batch_size = len(contrastive_hidden_states)
+        if contrastive_labels is not None and len(contrastive_indices)>0:
+            contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
 
-        if contrastive_labels is not None:
+            if has_hard_negative:
+                contrastive_batch_size = len(contrastive_hidden_states) // 3
+            elif not inference:
+                contrastive_batch_size = len(contrastive_hidden_states) // 2
+            elif inference:
+                contrastive_batch_size = len(contrastive_hidden_states)
+
             embed_indices = torch.argmax((contrastive_labels == embed_index).int(), dim=1)
             embed_features = contrastive_hidden_states[torch.arange(len(embed_indices)), embed_indices - 1] # (batch_size, embed_dim)
 
