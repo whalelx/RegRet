@@ -20,9 +20,9 @@ import torch
 import copy
 
 # generate pretrain weights for mbeir finetuning
-save_dir = "./tmp_ckpts/dam_cvp_nilpretrain"
+save_dir = "./tmp_ckpts/dam_cvp_global_nilpretrain"
 lamra_model = "./checkpoints/LEMUIR_Pretrain"
-vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision_c+v+p_5e-5"
+vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_vit_c+v+p_1e-4"
 
 # generate ctx only
 # save_dir = "./tmp_ckpts/dam_pretrain+lamrallm"

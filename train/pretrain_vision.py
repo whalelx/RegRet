@@ -23,6 +23,7 @@ from torch.utils.data import Dataset, ConcatDataset, WeightedRandomSampler, Rand
 from arguments import ModelArguments, DataArguments, TrainingArguments, LoraArguments
 from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
+from dataset.dataset_fgclip import FGCLIPDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
 # from dataset.datasets_mmeb import MMEBDataset
@@ -91,6 +92,8 @@ def train():
 
     # freeze certain params
     vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
+    if training_args.train_vision_projector:
+        vision_encoder_keys += MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
 
     rank0_print(f"ctx encoder is freezed... including:")
     for module in vision_encoder_keys:
@@ -120,6 +123,11 @@ def train():
         max_length=data_args.dam_max_samples,
         mode = 'crop',
     )
+    fgclip_dataset = FGCLIPDataset(
+        data_path=data_args.fgclip_data_path,
+        max_length=data_args.fgclip_max_samples
+        # text_truncate_length=350
+    )
     # mbeir_language_dataset = MbeirLanguageDataset(
     #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
     #     cand_pool_path=data_args.cand_pool_path,
@@ -141,8 +149,7 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_language_dataset, dam_dataset])
-    train_dataset = dam_dataset
+    train_dataset = torch.utils.data.ConcatDataset([fgclip_dataset, dam_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, dam_dataset])
@@ -155,13 +162,17 @@ def train():
         tokenizer=tokenizer,
         processor=processor,
     )
-
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 1000
+    training_args.save_total_limit = 3
+    
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = Trainer(
+    trainer = CustomTrainer(
         model=model,
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
+        language_ds_startidx=1
     )
     
     trainer.train()

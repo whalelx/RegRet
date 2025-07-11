@@ -26,7 +26,7 @@ IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH="./tmp_ckpts/dam_cvp_nilpretrain"
+MODEL_LOCAL_PATH="./tmp_ckpts/dam_cvp_global_nilpretrain" 
 
 TRAIN_VISION_ENCODER=False                              
 USE_VISION_LORA=False                                  
@@ -36,10 +36,10 @@ USE_LORA=True
 Q_LORA=False                                           
 LORA_R=128                                                
 LORA_ALPHA=256                                           
-RUN_ID=${MODEL_ID}_dam_cvp_tune
+RUN_ID=${MODEL_ID}_dam_cvp_global_tune
 
 DS_STAGE=zero3
-PER_DEVICE_BATCH_SIZE=60
+PER_DEVICE_BATCH_SIZE=70
 GRAD_ACCUM=2                                         
 NUM_EPOCHS=1                                         
 
@@ -55,7 +55,7 @@ torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --xhs_query_data_path ${DATASET_PATH}/M-BEIR/query/train/mbeir_xhsnote_task7_train.jsonl \
     --xhs_cand_pool_path ${DATASET_PATH}/M-BEIR/cand_pool/local/mbeir_xhsnote_task7_cand_pool.jsonl \
     --dam_data_path ${DATASET_PATH}/describe-anything-data \
-    --dam_max_samples 100000 \
+    --dam_max_samples 0 \
     --output_dir ./checkpoints/$RUN_ID \
     --report_to tensorboard \
     --run_name $RUN_ID \

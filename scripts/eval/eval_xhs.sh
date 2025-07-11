@@ -2,7 +2,11 @@ IMAGE_PATH_PREFIX=/mnt/tidalfs-hssh01/dataset/mmeb/M-BEIR
 # MODEL_ID="./checkpoints/qwen2_5-vl-7b_LEMUIR_tune_genloss0.3"
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune"
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_nodam"  # basline
-MODEL_ID="./tmp_ckpts/dam_cvp"  # language
+# MODEL_ID="./tmp_ckpts/dam_cvp"  # language
+# MODEL_ID="./tmp_ckpts/dam_globaldt"  # language
+# MODEL_ID="./tmp_ckpts/dam_cvp_global_nilpretrain"
+MODEL_ID="checkpoints/qwen2_5-vl-7b_dam_cvp_global_tune"
+# MODEL_ID="checkpoints/qwen2_5-vl-7b_candelete"
 
 ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
 

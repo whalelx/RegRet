@@ -1,6 +1,6 @@
 # MODEL_ID="./checkpoints/qwen2_5-vl-7b_LEMUIR_tune_genloss0.3"
-# MODEL_ID="checkpoints/qwen2_5-vl-7b_dam_cvp_tune"
-MODEL_ID="./tmp_ckpts/dam_cv"  # language
+MODEL_ID="checkpoints/qwen2_5-vl-7b_dam_cvp_global_tune"
+# MODEL_ID="./tmp_ckpts/dam_globaldt"  # language
 
 ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
 # ORIGINAL_MODEL_ID=/mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-7B-Instruct/snapshots/cc594898137f460bfe9f0759e9844b3ce807cfb5/

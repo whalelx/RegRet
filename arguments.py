@@ -56,7 +56,13 @@ class DataArguments:
         default=None, metadata={"help": "Path to the dam data."}
     )
     dam_max_samples: int = field(
-        default=200000, metadata={"help": "Maximum number of samples to use from the dam data."}
+        default=0, metadata={"help": "Maximum number of samples to use from the dam data."}
+    )
+    fgclip_data_path: str = field(
+        default=None, metadata={"help": "Path to the fgclip data."}
+    )
+    fgclip_max_samples: int = field(
+        default=0, metadata={"help": "Maximum number of samples to use from the fgclip data."}
     )
     instructions_path: str = field(
         default=None, metadata={"help": "Path to the instructions data json file."}
