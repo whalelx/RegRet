@@ -68,6 +68,28 @@ def compute_recall_at_k(relevant_docs, retrieved_indices, k):
             result.append(0.0)
     return result
 
+def compute_recall_at_k_rewrite(relevant_docs, retrieved_indices, k):
+
+    if not relevant_docs:
+        return 0.0 # Return 0 if there are no relevant documents
+
+    relevant_docs_set = set(relevant_docs)
+    retrieved_indices_set = set(retrieved_indices)
+
+    result = []
+    for target_doc in relevant_docs_set:
+        other_relevant_docs = relevant_docs_set - {target_doc}
+        num_other_relevant_retrieved = len(retrieved_indices_set.intersection(other_relevant_docs))
+        dynamic_k = k + num_other_relevant_retrieved
+        top_dynamic_k_retrieved_set = set(retrieved_indices[:dynamic_k])
+        
+        if target_doc in top_dynamic_k_retrieved_set:
+            result.append(1.0)
+        else:
+            result.append(0.0)
+            
+    return result
+
 def eval(args):
     original_model_id = args.original_model_id
     model_id = args.model_id 
@@ -212,7 +234,7 @@ def eval(args):
             relevant_docs = qrel[query_name]
             retrieved_indices_for_qid = cand_names[ind]
             for k in k_lists:
-                recall_at_k = compute_recall_at_k(relevant_docs, retrieved_indices_for_qid, k)
+                recall_at_k = compute_recall_at_k_rewrite(relevant_docs, retrieved_indices_for_qid, k)
                 res[f'recall_{k}'].extend(recall_at_k)
 
         for k in k_lists:
