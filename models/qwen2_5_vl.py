@@ -74,6 +74,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         focal_pixel_values_videos=None,
         focal_video_grid_thw=None,
         real_image_grid_thw=None,
+        reverse_idx = None,
     ):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -226,8 +227,10 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
                 return embed_features
 
             if has_hard_negative:
+                raise Exception("do not support yet!")
                 embed1, embed2, embed3 = embed_features[:contrastive_batch_size], embed_features[contrastive_batch_size:2*contrastive_batch_size], embed_features[2*contrastive_batch_size:]
             else:
+                embed_features = embed_features[reverse_idx.to(embed_features.device)]
                 embed1, embed2 = embed_features[:contrastive_batch_size], embed_features[contrastive_batch_size:]
 
             loss_fct = nn.CrossEntropyLoss()

@@ -44,6 +44,9 @@ class Qwen2_5VLDataCollator(BaseDataCollator):
         ]
         texts = [texts[i] for i in resort_id]
 
+        resort_id = torch.tensor(resort_id)
+        reverse_idx = torch.argsort(resort_id)
+
         inputs = self.processor(
             text=texts,
             images=image_inputs,
@@ -99,4 +102,5 @@ class Qwen2_5VLDataCollator(BaseDataCollator):
             focal_image_grid_thw=focal_crop_grid_thw,
             focal_image_ids=focal_image_ids,
             real_image_grid_thw=image_grid_thw,
+            reverse_idx = reverse_idx
         )
