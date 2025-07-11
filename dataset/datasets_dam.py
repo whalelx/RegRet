@@ -61,7 +61,7 @@ class DAMDataset(Dataset):
     ) -> None:
         super(DAMDataset, self).__init__()
         # 'SAM' is too large, 'SAV' caption is missing, because it's a vedio dataset
-        self.split_names =  ['COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO', "SAM"] 
+        self.split_names =  ["SAM", 'COCOStuff', 'LVIS', 'Mapillary', 'OpenImages', 'PACO'] 
         self.dataset = {k: load_dataset(data_path, k, num_proc=16) for k in self.split_names}
         self.lengths = [len(self.dataset[n]['train']) for n in self.split_names]
         self.mode = mode

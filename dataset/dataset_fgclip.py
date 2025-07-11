@@ -1,212 +1,185 @@
-
 import os
-import copy
-from dataclasses import dataclass, field
 import json
-import logging
-import pathlib
-from typing import Dict, Optional, Sequence, List
-
-import torch
-import random
-
-import glob
-import transformers
-
+from typing import Dict, List
 from torch.utils.data import Dataset
+import numpy as np
+import pandas as pd
+import glob
+from PIL import Image
+import random
+from io import BytesIO
+from datasets import load_dataset
 
 
-class FGCLIPBboxDataset(Dataset):
-    """Dataset for Stage2."""
+def lower_resolution(img: Image):
+    """Lower image resolution if too large"""
+    h, w = img.size
+    if h > 1000 and w > 1000:
+        return img.resize((h//10, w//10))
+    else:
+        return img
 
-    def __init__(self, data_path: str,
-                 data_args: DataArguments,
-                 img_preprocess=None,tokenizer=None):
-        super(FGCLIPBboxDataset, self).__init__()
 
-        if data_path.endswith('.json') or data_path.endswith('.jsonl'):
-            list_data_dict = json.load(open(data_path, "r", encoding="utf-8"))
-        elif data_path.endswith('.txt'):
-            lines = open(data_path, "r", encoding="utf-8").readlines()
-            list_data_dict = []
-            for line in lines:
-                json_file = line.rstrip()
-                list_data_dict += json.load(open(json_file, "r",encoding="utf-8"))
-        else:
-            json_files = glob.glob(os.path.join(data_path, '*.json'))
-            list_data_dict = []
-            for json_file in json_files:
-                list_data_dict += json.load(open(json_file, "r",encoding="utf-8"))
+def normalize_bbox(bbox, image_width, image_height):
+    """Normalize bbox coordinates to [0, 1] range"""
+    x1, y1, x2, y2 = bbox[:4]
+    return [x1/image_width, y1/image_height, x2/image_width, y2/image_height]
 
-            jsonl_files = glob.glob(os.path.join(data_path, '*.jsonl'))
-            for jsonl_file in jsonl_files:
-                list_data_dict += json.load(open(jsonl_file, "r",encoding="utf-8"))
+
+class FGCLIPDataset(Dataset):
+    """FGClip Dataset following DAM structure."""
+
+    def __init__(
+        self, 
+        data_path: str = 'mnt/tidal-alsh01/dataset/mmeb/fg-clip', 
+        mode: str = 'train',
+        max_length: int = 1200000,
+        text_truncate_length: int = 512
+    ) -> None:
+        super(FGCLIPDataset, self).__init__()
         
-
-        self.tokenizer = tokenizer
-        self.list_data_dict = list_data_dict
-        self.max_anns = 4
-
-        self.data_args = data_args
-        self.preprocess = img_preprocess
-        self.image_root = data_args.image_folder
-        self.max_length = data_args.max_seq_length
-        self.base_length = data_args.base_seq_length
-        self.base_image_size = data_args.base_image_size
-        self.add_box_loss = data_args.add_box_loss
-        self.use_hard_neg = data_args.use_hard_neg
-
-    def __len__(self):
-        return len(self.list_data_dict)
-
-    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-
-        item = self.list_data_dict[i]
-
-        caption = item["caption"]
-        caption_short = "a photo of "+item["short_caption"]        
-
-        image_path = item["f_path"]
-        image_path = image_path.replace("grit-20m/data-12m/","")
-        image_name = os.path.join(self.image_root,image_path)
+        # Load parquet files from directory
+        self.data_path = data_path
+        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet'))[:50]
+        self.dataset = load_dataset('parquet', num_proc=16, data_files=self.parquet_files)
+        self.text_truncate_length = text_truncate_length
+        if not self.parquet_files:
+            raise ValueError(f"No parquet files found in {data_path}")
         
-        image = Image.open(image_name).convert("RGB")
+        # Load all data and calculate lengths
+        # self.datasets = []
+        # self.lengths = []
         
-        image = image.resize((self.base_image_size, self.base_image_size))
+        # for parquet_file in self.parquet_files:
+        #     df = pd.read_parquet(parquet_file)
+        #     self.datasets.append(df)
+        #     self.lengths.append(len(df))
+        
+        self.max_length = min(max_length, len(self.dataset['train']))
+        self.mode = mode
 
-        image_tensor = self.preprocess.preprocess(image, return_tensors='pt')['pixel_values'][0]
-
-        text =  torch.tensor(self.tokenizer([caption], max_length=self.max_length, padding="max_length", truncation=True).input_ids, dtype=torch.long, device=image_tensor.device)
-        short_text = torch.tensor(self.tokenizer([caption_short], max_length=self.base_length, padding="max_length", truncation=True).input_ids, dtype=torch.long, device=image_tensor.device)        
-
-        if self.add_box_loss:
-            box_texts = []
-            bbox_info = item["bbox_info"]
-
-            total_num = self.max_anns
-            valid_num = min(len(bbox_info), self.max_anns)
-            boxes_template = torch.zeros((total_num, 4), device=image_tensor.device)
-            width, height = image.size
-            for i in range(total_num):
-                if i<valid_num:
-                    bbox_data = bbox_info[i]
-                    box = bbox_data["bbox"]
-                    box_caption = random.choice([bbox_data["short_expr"], bbox_data["long_expr"]])
-
-                else:
-                    box = [0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.000000000]
-                    box_caption = ""
-                    
-
-                box_tensor = torch.tensor(box[:4])
-                boxes_template[i] = box_tensor
-
-                if box[0] > box[2] or box[1] > box[3]:
-                    raise ValueError("Box coordinates are invalid.")
-
-                box_text = torch.tensor(self.tokenizer([box_caption], max_length=self.base_length, padding="max_length", truncation=True).input_ids, dtype=torch.long, device=image_tensor.device)        
-                box_texts.append(box_text)
-
-
-            box_texts = torch.cat(box_texts,dim=0)
-            bbox_num = torch.tensor([valid_num], device=image_tensor.device)
-                    
-        if self.use_hard_neg:
-            hard_texts = []
-           
-            bbox_info = item["bbox_info"]
-
-            width, height = image.size
-            total_num = self.max_anns
-            valid_num = min(len(bbox_info), self.max_anns)
-            hard_boxes = torch.zeros((total_num, 4), device=image_tensor.device)
-            valid_hard = 0
-            for i in range(total_num):
-                if i<valid_num:
-                    bbox_data = bbox_info[i]
-                    box = bbox_data["bbox"]
-                    box_caption = bbox_data["short_expr"]
-                    
-                    box_tensor = torch.tensor(box[:4])
-
-                    if box[0] > box[2] or box[1] > box[3]:
-                        raise ValueError("Box coordinates are invalid.")
+    def __len__(self) -> int:
+        return self.max_length
     
-                    if bbox_data["flag_short_neg"] == 1:
-                        cur_texts = [box_caption]
-                        hard_negs = bbox_data["short_expr_negs"]
-                        for key in hard_negs.keys():
-                            cur_texts.append(hard_negs[key])
-                        box_text = torch.tensor(self.tokenizer(cur_texts, max_length=self.base_length, padding="max_length", truncation=True).input_ids, dtype=torch.long, device=image_tensor.device)        
-                        hard_texts.append(box_text)
-
-                        hard_boxes[valid_hard] = box_tensor
-                        valid_hard = valid_hard+1
-
-
-            valid_hard = torch.tensor([valid_hard], device=image_tensor.device)
-
-            if len(hard_texts) > 0:
-                hard_texts = torch.cat(hard_texts,dim=0)
+    def get_dataset_idx(self, index):
+        """Get dataset index and item index, similar to DAM"""
+        for i, ds_len in enumerate(self.lengths):
+            if index < ds_len:
+                return i, index
             else:
-                hard_texts = None
+                index -= ds_len
+        # If index exceeds total length, wrap around
+        total_length = sum(self.lengths)
+        index = index % total_length
+        for i, ds_len in enumerate(self.lengths):
+            if index < ds_len:
+                return i, index
+            else:
+                index -= ds_len
 
-        data_dict = {}
-        data_dict['image'] = image_tensor
-        data_dict['text'] = text
-        data_dict['short_text'] = short_text
-        data_dict['add_box_loss'] = self.add_box_loss
-        data_dict['use_hard_neg'] = self.use_hard_neg
-
-        if self.add_box_loss:
-            data_dict['box_texts'] = box_texts
-            data_dict['box_infos'] = boxes_template
-            data_dict['box_nums'] = bbox_num
-        if self.use_hard_neg:
-            data_dict['hard_texts'] = hard_texts
-            data_dict['hard_infos'] = hard_boxes
-            data_dict['hard_nums'] = valid_hard
+    def construct_messages(self, idx: int):
+        # dataset_idx, item_idx = self.get_dataset_idx(idx)
+        # df = self.datasets[dataset_idx]
+        item = self.dataset['train'][idx]
+        # item = df.iloc[item_idx]
+        
+        # Extract data from parquet row
+        caption = item.get("caption", "")
+        short_caption = item.get("short_caption", "")
+        f_path = item.get("f_path", "")
+        bbox_info = item.get("bbox_info", [])
+        
+        if 'image' in item and item['image'] is not None:
+            # Image stored as bytes in parquet
+            image = Image.open(BytesIO(item['image'])).convert("RGB")
+        elif f_path:
+            # Image stored as file path
+            # Clean up path if needed
+            if "grit-20m/data-12m/" in f_path:
+                f_path = f_path.replace("grit-20m/data-12m/", "")
             
-        return data_dict
-
-
-
-
-@dataclass
-class FGCLIPDataCollator(object):
-    """Collate examples for supervised fine-tuning."""
-
-    def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
+            image_path = os.path.join(self.data_path, f_path)
+            if not os.path.exists(image_path):
+                # Try alternative path structures
+                image_path = f_path
+            
+            image = Image.open(image_path).convert("RGB")
         
-        batch = {}
-        images = [instance['image'] for instance in instances]
-        batch['image'] = torch.stack(images)
-        texts = [instance['text'] for instance in instances]
-        batch['text_long'] = torch.cat(texts,dim=0)
-        short_texts = [instance['short_text'] for instance in instances]
-        batch['text_short'] = torch.cat(short_texts,dim=0)
+        # Lower resolution if needed
+        image = lower_resolution(image)
         
-        batch["add_box_loss"] = instances[0]["add_box_loss"]
-        batch["use_hard_neg"] = instances[0]["use_hard_neg"]
+        # Process bbox info
+        # Pass the box process for now
+        if False: #bbox_info and len(bbox_info) > 0:
+            # Select a random bbox annotation
+            selected_bbox = random.choice(bbox_info)
+            bbox = selected_bbox.get("bbox", [0, 0, 1, 1])
+            
+            # Normalize bbox coordinates
+            image_width, image_height = image.size
+            normalized_bbox = normalize_bbox(bbox, image_width, image_height)
+            
+            # Get bbox description
+            bbox_text = selected_bbox.get("short_expr", "") or selected_bbox.get("long_expr", "")
+            if not bbox_text:
+                bbox_text = short_caption or caption
+            bbox_text = bbox_text[:self.text_truncate_length]
+            
+            # Construct message with bbox (following DAM format)
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": image, "box": normalized_bbox},
+                        {"type": "text", "text": f"\nDescribe the region in the image bounded by a red box."}
+                    ]
+                },
+                {
+                    "role": "assistant", 
+                    "content": [
+                        {"type": "text", "text": bbox_text}
+                    ]
+                }
+            ]
+        else:
+            # No bbox info, use full image with caption (fallback)
+            text = caption or short_caption or "This is an image."
+            text = text[:self.text_truncate_length]
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": image},
+                        {"type": "text", "text": f"\nDescribe the image in detail."}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": text}
+                    ]
+                }
+            ]
         
-        if batch["add_box_loss"]:
-            box_texts = [instance['box_texts'] for instance in instances]
-            batch['box_texts'] = torch.cat(box_texts,dim=0)
-            box_infos = [instance['box_infos'] for instance in instances]
-            batch['box_infos'] = torch.cat(box_infos,dim=0)
-            box_nums = [instance['box_nums'] for instance in instances]
-            batch['box_nums'] = torch.cat(box_nums, dim=0)
-        if batch["use_hard_neg"] :
-            hard_texts = []
-            for instance in instances:
-                if instance['hard_texts'] != None:
-                    hard_texts.append(instance['hard_texts'])
+        return message
 
-            batch['hard_texts'] = torch.cat(hard_texts,dim=0)
-            hard_infos = [instance['hard_infos'] for instance in instances]
-            batch['hard_infos'] = torch.cat(hard_infos,dim=0)
-            hard_nums = [instance['hard_nums'] for instance in instances]
-            batch['hard_nums'] = torch.cat(hard_nums, dim=0)                
+    def __getitem__(self, i) -> Dict[str, List]: 
+        j = i * 2 + 1
+        return self.construct_messages(i), self.construct_messages(i)
 
-        return batch
+if __name__ == "__main__":
+    # Example usage
+    datapath = "/mnt/tidal-alsh01/dataset/mmeb/fg-clip"
 
+    ds = FGCLIPDataset(datapath, max_length=1000)
+    print(f"Dataset length: {len(ds)}")
+    print(f"Number of parquet files: {len(ds.parquet_files)}")
+
+    # Test getting an item
+    try:
+        item1, item2 = ds[0]
+        print("Successfully loaded first item")
+        print(f"Item 1 structure: {type(item1)}")
+        print(f"User content keys: {item1[0]['content'][0].keys()}")
+    except Exception as e:
+        print(f"Error loading item: {e}")

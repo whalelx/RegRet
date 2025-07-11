@@ -23,7 +23,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 IMAGE_FACTOR = 28
-MIN_PIXELS = 4 * 28 * 28
+MIN_PIXELS = 64 * 28 * 28
 MAX_PIXELS = 300 * 28 * 28
 # MAX_PIXELS = 16384 * 28 * 28
 MAX_RATIO = 200
