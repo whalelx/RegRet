@@ -176,29 +176,29 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
             focal_pixel_values, 
             focal_image_grid_thw,
             focal_image_ids,
-            output_hidden_states=False, return_dict=True):
+            enc_dec_arch=False, 
+        ):
 
-        full_image_feature, full_image_winidx = self.extract_feature(
+        full_image_feature_list, full_image_winidx = self.extract_feature(
             pixel_values,
-            grid_thw
+            grid_thw,
+            output_hidden_states=enc_dec_arch
         )
-
-        # re-sort
-        seq_len = full_image_feature.shape[0]
-        full_image_feature = full_image_feature.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
-        reverse_indices = torch.argsort(full_image_winidx)
-        full_image_feature = full_image_feature[reverse_indices, :, :]
-        full_image_feature = full_image_feature.reshape(seq_len, -1)
-
+        full_image_feature = full_image_feature_list[-1] if enc_dec_arch else full_image_feature_list
+        
         if focal_image_ids is None or focal_image_ids.size(0) == 0:
-            full_image_feature = self.merger(full_image_feature)
-            return full_image_feature
-
+            return self.patch_merge(full_image_feature, full_image_winidx)
+        
+        seq_len = full_image_feature.shape[0]
         focal_image_ids = focal_image_ids.to(full_image_feature.device)
-        mask = self.gen_ctx_feature_mask(seq_len, focal_image_ids, grid_thw)
-        context_feature = full_image_feature[mask, :]
 
+        nofocal_image_nums = focal_image_ids[0].item()
         context_thw = grid_thw[focal_image_ids, :]
+        context_token_nums = (grid_thw.prod(1).sum() - context_thw.prod(1).sum()).item()
+        if enc_dec_arch:
+            context_feature = [f[context_token_nums:] for f in full_image_feature_list]
+        else:
+            context_feature = full_image_feature[context_token_nums:]
 
         cimage_features, cimage_winidx = self.extract_feature(
             focal_pixel_values,
@@ -208,12 +208,14 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
         )
         cimage_features = self.patch_merge(cimage_features, cimage_winidx)
 
-        full_image_feature = full_image_feature[~mask]
+        full_image_feature = full_image_feature[:context_token_nums]
+        full_image_winidx, _ = self.get_window_index(grid_thw[:nofocal_image_nums])
+        
         if full_image_feature.shape[0] == 0:
             return cimage_features
         else:
-            full_image_feature = self.merger(full_image_feature)
             # HACK suppose cimages are always behind the full images
+            full_image_feature = self.patch_merge(full_image_feature, full_image_winidx)
             final_image_feature = torch.cat([
                 full_image_feature,
                 cimage_features
@@ -226,11 +228,13 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
             hidden_states: torch.Tensor,
             grid_thw: torch.Tensor, 
             context_feature: torch.Tensor = None,
-            context_thw: torch.Tensor = None
+            context_thw: torch.Tensor = None,
+            output_hidden_states=False, 
         ) -> torch.Tensor:
         ''' 
         The original forward function of Qwen2_5_VisionTransformer.
         '''
+        middle_hidden_states = []
         hidden_states = self.patch_embed(hidden_states)
         rotary_pos_emb = self.rot_pos_emb(grid_thw)
         window_index, cu_window_seqlens = self.get_window_index(grid_thw)
@@ -262,11 +266,6 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
             )
             cu_window_seqlens_kv = torch.unique_consecutive(cu_window_seqlens_kv)
             cu_seqlens_kv = self.gen_cu_seqlens(context_thw)
-            
-            ctx_seq_len, _ = context_feature.size()
-            context_feature = context_feature.reshape(ctx_seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
-            context_feature = context_feature[window_index_kv, :, :]
-            context_feature = context_feature.reshape(ctx_seq_len, -1)
 
         for layer_num, blk in enumerate(self.blocks):
             if layer_num in self.fullatt_block_indexes:
@@ -285,15 +284,22 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
                 cu_seqlens_kv_now = cu_seqlens_kv
                 cu_seqlens_now = cu_seqlens
                 context_layer = self.context_layers[layer_num]
+                cur_layer_ctx_feature = context_feature[layer_num] if isinstance(context_feature, list) else context_feature
                 # if self.gradient_checkpointing and self.training:
                 #     hidden_states = self._gradient_checkpointing_func(
                 #         context_layer.__call__, hidden_states, cu_seqlens_now, cu_seqlens_kv_now, None, position_embeddings, context_feature
                 #     )
                 # else:
                 # BUG : cannot backward when using gradient checkpointing
-                hidden_states = context_layer(hidden_states, cu_seqlens=cu_seqlens_now, cu_seqlens_kv=cu_seqlens_kv_now, position_embeddings=position_embeddings, context_feature=context_feature)
+                hidden_states = context_layer(hidden_states, cu_seqlens=cu_seqlens_now, cu_seqlens_kv=cu_seqlens_kv_now, position_embeddings=position_embeddings, context_feature=cur_layer_ctx_feature)
 
-        return hidden_states, window_index
+            if output_hidden_states:
+                middle_hidden_states.append(hidden_states)
+
+        if output_hidden_states:
+            return tuple(middle_hidden_states), window_index
+        else: 
+            return hidden_states, window_index
     
     def patch_merge(self, hidden_states, window_index):
         hidden_states = self.merger(hidden_states)
