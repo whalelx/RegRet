@@ -17,13 +17,13 @@ import transformers
 from transformers import Trainer, is_datasets_available
 import datasets
 from transformers.integrations import deepspeed
-from transformers.trainer import LengthGroupedSampler, has_length
 from torch.utils.data import Dataset, ConcatDataset, WeightedRandomSampler, RandomSampler
 
 
 from arguments import ModelArguments, DataArguments, TrainingArguments, LoraArguments
 from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
+from dataset.dataset_fgclip import FGCLIPDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
 # from dataset.datasets_mmeb import MMEBDataset
@@ -66,21 +66,7 @@ def train():
         training_args.distributed_state.distributed_type = DistributedType.DEEPSPEED
 
     device_map = None
-    if lora_args.q_lora:
-        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)} if int(os.environ.get("WORLD_SIZE", 1)) != 1 else None
-        if len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled():
-            raise ValueError("FSDP or ZeRO3 are not incompatible with QLoRA.")
-
-    # llm quantization config (for q-lora)
     bnb_config = None
-    if lora_args.use_lora and lora_args.q_lora:
-        from transformers import BitsAndBytesConfig
-        rank0_print("Quantization for LLM enabled...")
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=compute_dtype,
-            bnb_4bit_quant_type="nf4", 
-        )
     
     # load model, tokenizer, processor
     rank0_print("Loading model, tokenizer, processor...")
@@ -95,116 +81,67 @@ def train():
     model, tokenizer, processor = loader.load(pretrain=False)
     tokenizer.model_max_length = training_args.model_max_length
 
+    # Set language loss weight from training arguments
+    model.config.language_loss_weight = training_args.language_loss_weight
+
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
+    for name, param in model.named_parameters():
+        param.requires_grad_(False)
+
 
     # freeze certain params
-    vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
-    if not training_args.train_vision_encoder:
-        rank0_print(f"Vision encoder is freezed... including:")
-        for module in vision_encoder_keys:
-            rank0_print(f"\t{module}")
-            eval(f"model.{module}").requires_grad_(False)
+    vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
+    if training_args.train_vision_projector:
+        vision_encoder_keys += MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
+
+    rank0_print(f"ctx encoder is freezed... including:")
+    for module in vision_encoder_keys:
+        rank0_print(f"\t{module}")
+        eval(f"model.{module}").requires_grad_(True)
 
     vision_projector_keys = MODULE_KEYWORDS[model_args.model_family_id]["vision_projector"]
-    if not training_args.train_vision_projector:
+    if training_args.train_vision_projector:
         rank0_print(f"Vision projector is freezed... including:")
         for module in vision_projector_keys:
             rank0_print(f"\t{module}")
-            eval(f"model.{module}").requires_grad_(False)
+            eval(f"model.{module}").requires_grad_(True)
 
-    # other components preparation (e.g., image_newline, vision_resampler)
-    # we will just freeze these
-    if "others" in MODULE_KEYWORDS[model_args.model_family_id]:
-        rank0_print(f"Other multimodal component is freezed... including:")
-        for other_key in MODULE_KEYWORDS[model_args.model_family_id]["others"]:
-            rank0_print(f"\t{other_key}")
-            eval(f"model.{other_key}").requires_grad_(False)
-
-    # lora preparation
-    llm_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm"]
-    # llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
-
-    if not (lora_args.use_lora or (training_args.train_vision_encoder and lora_args.use_vision_lora)):
-        rank0_print("No LoRA enabled...")        
-    else:
-        named_modules = {n: m for n, m in model.named_modules()}
-        lora_modules = []
-        full_modules = []
-
-        if training_args.train_vision_encoder and lora_args.use_vision_lora:
-            rank0_print("LoRA for vision encoder enabled...")
-            lora_modules.extend(find_all_linear_names(named_modules, vision_encoder_keys))
-        elif training_args.train_vision_encoder:
-            rank0_print("Vision encoder will be fully trained...")
-            full_modules.extend(vision_encoder_keys)
-        
-        if lora_args.use_lora:
-            rank0_print("LoRA for LLM enabled...")
-            lora_modules.extend(find_all_linear_names(named_modules, llm_keys))
-        else:
-            rank0_print("LLM will be fully trained...")
-            full_modules.extend(llm_keys)
-        
-        if training_args.train_vision_projector:
-            rank0_print("Vision projector will be fully trained...")
-            full_modules.extend(vision_projector_keys)
-        
-        # # Always fully train the embedding head for contrastive learning
-        # rank0_print("Embedding/Language head will be fully trained...")
-        # full_modules.extend(llm_heads_keys)
-
-        lora_config = LoraConfig(
-            r=lora_args.lora_r,
-            lora_alpha=lora_args.lora_alpha,
-            target_modules=lora_modules,
-            modules_to_save=full_modules,
-            lora_dropout=lora_args.lora_dropout,
-            bias=lora_args.lora_bias,
-            task_type="CAUSAL_LM",
-        )
-
-        if lora_args.q_lora:
-            model = prepare_model_for_kbit_training(
-                model, use_gradient_checkpointing=training_args.gradient_checkpointing
-            )
-            
-        model = get_peft_model(model, lora_config)
-        
     # print trainable parameters for inspection
     rank0_print("Trainable parameters:")
     for name, param in model.named_parameters():
         if param.requires_grad:
             rank0_print(f"\t{name}")
 
+    param_cnt = sum(p.numel() for p in model.visual.context_layers.parameters() if p.requires_grad) / 1000000
+    rank0_print(f"context encoder extra params: {param_cnt}M")
+
     # load data
     rank0_print("Loading data...")
-    mbeir_dataset = LazySupervisedDataset(
-        query_data_path=data_args.query_data_path,
-        cand_pool_path=data_args.cand_pool_path,
-        instructions_path=data_args.instructions_path,
-        image_path_prefix=data_args.image_path_prefix,
-        tokenizer=tokenizer,
+    dam_dataset = DAMDataset(
+        data_path=data_args.dam_data_path,
+        max_length=data_args.dam_max_samples,
+        mode = 'crop',
     )
-
-    xhs_dataset = XHSDataset(
-        query_data_path=data_args.xhs_query_data_path,
-        cand_pool_path=data_args.xhs_cand_pool_path,
-        instructions_path=data_args.instructions_path,
-        image_path_prefix=data_args.image_path_prefix,
-        tokenizer=tokenizer 
+    fgclip_dataset = FGCLIPDataset(
+        data_path=data_args.fgclip_data_path,
+        max_length=data_args.fgclip_max_samples
+        # text_truncate_length=350
     )
-    # dam_dataset = DAMDataset(
-    #     data_path=data_args.dam_data_path,
-    #     max_length=data_args.dam_max_samples
-    # )
     # mbeir_language_dataset = MbeirLanguageDataset(
     #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
     #     cand_pool_path=data_args.cand_pool_path,
     #     instructions_path=data_args.instructions_path,
     #     image_path_prefix=data_args.image_path_prefix,
     #     tokenizer=tokenizer,
-    #     max_length=110000
+    #     max_length=90000
+    # )
+    # mbeir_dataset = LazySupervisedDataset(
+    #     query_data_path=data_args.query_data_path,
+    #     cand_pool_path=data_args.cand_pool_path,
+    #     instructions_path=data_args.instructions_path,
+    #     image_path_prefix=data_args.image_path_prefix,
+    #     tokenizer=tokenizer 
     # )
     # mmeb_dataset = MMEBDataset(
     #     data_path=data_args.mmeb_data_path,
@@ -212,9 +149,10 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+    train_dataset = torch.utils.data.ConcatDataset([fgclip_dataset, dam_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, dam_dataset])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
@@ -224,13 +162,17 @@ def train():
         tokenizer=tokenizer,
         processor=processor,
     )
-
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 1000
+    training_args.save_total_limit = 3
+    
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = Trainer(
+    trainer = CustomTrainer(
         model=model,
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
+        language_ds_startidx=1
     )
     
     trainer.train()
