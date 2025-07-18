@@ -40,7 +40,7 @@ class FGCLIPDataset(Dataset):
         
         # Load parquet files from directory
         self.data_path = data_path
-        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet'))[:50]
+        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet'))
         self.dataset = load_dataset('parquet', num_proc=16, data_files=self.parquet_files)
         self.text_truncate_length = text_truncate_length
         if not self.parquet_files:
@@ -108,21 +108,25 @@ class FGCLIPDataset(Dataset):
         # Lower resolution if needed
         image = lower_resolution(image)
         
+        # return_box_flag = False if random.random() < 0.8 else True
         # Process bbox info
         # Pass the box process for now
-        if False: #bbox_info and len(bbox_info) > 0:
+        if bbox_info and len(bbox_info) > 0: # and random.random() > 0.833: # return 16% of the data as box, which is around 200k 
+
             # Select a random bbox annotation
             selected_bbox = random.choice(bbox_info)
-            bbox = selected_bbox.get("bbox", [0, 0, 1, 1])
+            bbox = selected_bbox.get("bbox", [0, 0, 1., 1, -1])
+            bbox = bbox[:4]
             
             # Normalize bbox coordinates
-            image_width, image_height = image.size
-            normalized_bbox = normalize_bbox(bbox, image_width, image_height)
+            # image_width, image_height = image.size
+            # normalized_bbox = normalize_bbox(bbox, image_width, image_height)
+            normalized_bbox = bbox
             
             # Get bbox description
-            bbox_text = selected_bbox.get("short_expr", "") or selected_bbox.get("long_expr", "")
+            bbox_text = selected_bbox.get("long_expr", "") or selected_bbox.get("short_expr", "")
             if not bbox_text:
-                bbox_text = short_caption or caption
+                bbox_text = caption or short_caption
             bbox_text = bbox_text[:self.text_truncate_length]
             
             # Construct message with bbox (following DAM format)
@@ -131,7 +135,7 @@ class FGCLIPDataset(Dataset):
                     "role": "user",
                     "content": [
                         {"type": "image", "image": image, "box": normalized_bbox},
-                        {"type": "text", "text": f"\nDescribe the region in the image bounded by a red box."}
+                        {"type": "text", "text": f"\nDescribe the image in a short scentence."}
                     ]
                 },
                 {
@@ -169,7 +173,7 @@ class FGCLIPDataset(Dataset):
 
 if __name__ == "__main__":
     # Example usage
-    datapath = "/mnt/tidal-alsh01/dataset/mmeb/fg-clip"
+    datapath = "/mnt/tidal-sh01/dataset/mmeb/fg-clip"
 
     ds = FGCLIPDataset(datapath, max_length=1000)
     print(f"Dataset length: {len(ds)}")

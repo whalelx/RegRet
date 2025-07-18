@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoProcessor, AutoModelForCausalLM
 
 from . import register_loader
 from .base import BaseModelLoader
@@ -26,7 +26,9 @@ class Qwen2VL2BModelLoader(BaseModelLoader):
     def add_embed_token(self, tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        assert len(emb_tokens) == num_new_tokens
+        if num_new_tokens == 0:  # if the emb is already in the tokenizer
+            return
+        assert len(emb_tokens) == num_new_tokens, f"{len(emb_tokens)} not equals {num_new_tokens}"
 
         model.resize_token_embeddings(len(tokenizer))
 
