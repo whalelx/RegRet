@@ -1,0 +1,279 @@
+import json
+import os
+import argparse
+import requests
+from PIL import Image, ImageDraw
+from tqdm import tqdm
+import asyncio
+
+# Constants for M-BEIR format
+DATASET_ID_XHS = "10"
+TASK_ID_XHS = "7"
+ROOT_FS = "/mnt/tidal-alsh01/dataset/mmeb/"
+XHS_IMAGE_SUBDIR = "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/goods_data/from_20250401_to_20250407/images"
+
+ON_SERVER = True
+DOWNLOAD_IMAGE = False
+TRAIN = False
+
+CONCURRENCY= 100
+SAMPLES_FOR_TEST_UP = 5000
+SAMPLES_FOR_TEST_LOW = 1000
+
+TOP_K_POSCAND = 10
+
+def cal_box_score(box) -> float:
+    return 1/(box[2]-box[0])/(box[3]-box[1])
+
+def download_and_draw_box(url, filename, box=None):
+    if not ON_SERVER or not DOWNLOAD_IMAGE:
+        return
+    if os.path.exists(filename):
+        return
+
+    response = requests.get(url, stream=True)
+    # if the img can not be download, use a white img as a negative candi instead 
+    if response.status_code == 403:
+        size = (64, 64)
+        white_img = Image.new("RGB", size, (255, 255, 255))
+        white_img.save(filename)
+        print(response)
+        return False
+
+    response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
+
+    img = Image.open(response.raw)
+    
+    # Convert image to RGB if it's not already (e.g., to handle RGBA, P modes)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+
+    img.save(filename)
+    return True
+
+def get_top_k_poscand(temp_pos_candidates_scores):
+    if len(temp_pos_candidates_scores) <= TOP_K_POSCAND:
+        return [x[0] for x in temp_pos_candidates_scores]
+    else:
+        return [x[0] for x in temp_pos_candidates_scores[:TOP_K_POSCAND]]
+
+def generate_mbeir_files(filtered_samples_path, filtered_labels_path, output_dir):
+    """
+    Generates M-BEIR evaluation files from the outputs of filter_our_test1k.py.
+    """
+    global XHS_IMAGE_SUBDIR
+    XHS_IMAGE_SUBDIR = os.path.join(ROOT_FS, XHS_IMAGE_SUBDIR)
+    filtered_samples_path = os.path.join(ROOT_FS, filtered_samples_path)
+    output_dir = os.path.join(ROOT_FS, output_dir)
+
+    with open(filtered_samples_path, 'r', encoding='utf-8') as f:
+        queries_input = json.load(f)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    qrels_lines = []
+    queries_jsonl_lines = []
+    
+    global_orig_cand_to_mbeir_did = {}
+    global_mbeir_cand_contents = {}
+    
+    query_counter = 1
+    cand_counter = 1
+
+    for counter, (original_query_id, candidate_items_for_query) in enumerate(queries_input.items()):
+        if counter >= SAMPLES_FOR_TEST_UP:
+            break
+        if counter <= SAMPLES_FOR_TEST_LOW:
+            continue
+
+        original_query_image_id = candidate_items_for_query[0].get("query_image_path").split("/")[-1]
+        original_query_image_url = candidate_items_for_query[0].get("query_image_url")
+        original_query_box = candidate_items_for_query[0].get("query_box")
+
+        sorted_original_score_keys_for_current_query_candidates = {}
+        for j,dd in enumerate(candidate_items_for_query):
+            sorted_original_score_keys_for_current_query_candidates[j+1] = {
+                'img2img': dd['img2img'],
+                'box_score': cal_box_score(dd['doc_box'])
+            }
+
+        if len(candidate_items_for_query) != len(sorted_original_score_keys_for_current_query_candidates):
+            print(f"Warning: Mismatch in candidate list length ({len(candidate_items_for_query)}) and score key count ({len(sorted_original_score_keys_for_current_query_candidates)}) for query '{original_query_id}'. Skipping this query.")
+            continue
+
+        temp_pos_candidates_scores = [] # (original_score_key, img_score, mm_score)
+        temp_neg_original_score_keys = []
+
+        # Iterate based on the sorted score keys to ensure correct association with candidate_items_for_query
+        for original_score_key,scores_dict in sorted_original_score_keys_for_current_query_candidates.items():
+            img_score = scores_dict.get('img2img', 0)
+            box_score = scores_dict.get('box_score', 0)
+            
+            if img_score > 1: # Positive candidate based on filter_our_test1k.py logic
+                temp_pos_candidates_scores.append((original_score_key, img_score, box_score))
+            else:
+                temp_neg_original_score_keys.append(original_score_key)
+        
+        if not temp_pos_candidates_scores:
+            continue
+        elif len(temp_pos_candidates_scores) == len(candidate_items_for_query):
+            # NOTE if all items are positive, it is too easy
+            continue
+
+        temp_pos_candidates_scores.sort(key=lambda x: (-x[1], -x[2])) # Sort by img_score desc, then mm_score desc
+        best_pos_original_score_key = get_top_k_poscand(temp_pos_candidates_scores)
+
+        mbeir_qid = f"{DATASET_ID_XHS}:{query_counter}"
+        mbeir_pos_cand_dids_list = []
+        mbeir_neg_cand_dids_list = []
+
+        # Iterate through candidate_items_for_query using the sorted_original_score_keys for indexing
+        for i, original_score_key_for_item in enumerate(sorted_original_score_keys_for_current_query_candidates):
+            cand_item_dict = candidate_items_for_query[i] # Assuming candidate_items_for_query is ordered like sorted_original_score_keys
+            
+            original_cand_img_url = cand_item_dict.get("doc_image_url")
+            original_cand_caption = None #cand_item_dict.get("caption")
+            original_cand_img_path = cand_item_dict.get("doc_image_path").split("/")[-1]
+
+            unique_cand_key_part = ""
+            if original_cand_img_path:
+                unique_cand_key_part = os.path.basename(original_cand_img_path)
+            elif original_cand_caption:
+                unique_cand_key_part = original_cand_caption[:50] # Truncate for brevity as a key part
+            else:
+                # Fallback if no image path or caption; less ideal for global uniqueness
+                unique_cand_key_part = f"unidentified_cand_oqid_{original_query_id}_osk_{original_score_key_for_item}"
+            
+            # This identifier is used to map original candidates to unique M-BEIR DIDs.
+            # It should be globally unique for each distinct candidate item.
+            original_cand_identifier = unique_cand_key_part 
+            add_to_global_pool = True
+            if original_cand_identifier not in global_orig_cand_to_mbeir_did:
+                mbeir_cand_did = f"{DATASET_ID_XHS}:{cand_counter}"
+                global_orig_cand_to_mbeir_did[original_cand_identifier] = mbeir_cand_did
+                
+                cand_img_path_for_pool = None
+                if original_cand_img_path:
+                    cand_img_path_for_pool = os.path.join(XHS_IMAGE_SUBDIR, os.path.basename(original_cand_img_path))
+
+                cand_txt_for_pool = original_cand_caption
+                
+                modality = "unknown"
+                if cand_img_path_for_pool and cand_txt_for_pool:
+                    modality = "image,text"
+                elif cand_img_path_for_pool:
+                    modality = "image"
+                elif cand_txt_for_pool:
+                    modality = "text"
+                if cand_img_path_for_pool is not None:
+                    download_and_draw_box(original_cand_img_url, cand_img_path_for_pool)
+
+                cand_content_for_pool = {
+                    "img_path": cand_img_path_for_pool,
+                    "modality": modality,
+                    "did": mbeir_cand_did,
+                    "box": cand_item_dict.get("doc_box", None),
+                    "src_content": json.dumps({
+                        "original_id": original_cand_identifier, 
+                        "original_query_id_context": original_query_id, 
+                        "original_score_key_for_query": original_score_key_for_item
+                    }),
+                    "txt": cand_txt_for_pool
+                }
+                add_to_global_pool = True
+            else:
+                add_to_global_pool = False
+                mbeir_cand_did = global_orig_cand_to_mbeir_did[original_cand_identifier]
+
+            if original_score_key_for_item in best_pos_original_score_key:
+                mbeir_pos_cand_dids_list.append(mbeir_cand_did)
+                if add_to_global_pool:
+                    global_mbeir_cand_contents[mbeir_cand_did] = cand_content_for_pool
+                    cand_counter += 1
+            elif original_score_key_for_item in temp_neg_original_score_keys:
+                mbeir_neg_cand_dids_list.append(mbeir_cand_did)
+                if add_to_global_pool:
+                    global_mbeir_cand_contents[mbeir_cand_did] = cand_content_for_pool
+                    cand_counter += 1
+
+        for mbeir_pos_cand_did_str in mbeir_pos_cand_dids_list:
+            qrels_lines.append(f"{mbeir_qid} 0 {mbeir_pos_cand_did_str} 1 {TASK_ID_XHS}")
+
+        # Construct query image path. Assumes original_query_image_id is a filename or can be derived into one.
+        query_img_filename_part = original_query_image_id #os.path.basename(original_query_image_id) 
+        if '.' not in query_img_filename_part: # Add default extension if missing
+            query_img_filename = f"{query_img_filename_part}.jpg"
+        else:
+            query_img_filename = query_img_filename_part
+        query_img_path_for_jsonl = os.path.join(XHS_IMAGE_SUBDIR, query_img_filename)
+        download_and_draw_box(original_query_image_url, query_img_path_for_jsonl)
+        
+        # CRITICAL: Placeholder for query_txt. User needs to replace this with actual query text.
+        query_txt_for_jsonl = "" #f"Retrieve content related to the object bounded by the red box"
+        
+        query_modality = "image,text" # Default, adjust based on actual query content availability
+        # Example: if not query_txt_for_jsonl: query_modality = "image"
+        # Example: if not os.path.exists(actual_query_image_path_to_check): query_modality = "text"
+
+        query_entry = {
+            "qid": mbeir_qid,
+            "query_txt": query_txt_for_jsonl,
+            "query_img_path": query_img_path_for_jsonl,
+            "box": original_query_box,
+            "query_modality": query_modality,
+            "query_src_content": json.dumps({"id": original_query_id}),
+            "pos_cand_list": mbeir_pos_cand_dids_list,
+            "neg_cand_list": list(set(mbeir_neg_cand_dids_list)), # Ensure unique neg DIDs
+            "task_id": int(TASK_ID_XHS)
+        }
+        queries_jsonl_lines.append(json.dumps(query_entry))
+        query_counter += 1
+
+    cand_pool_jsonl_lines = [json.dumps(content) for content in global_mbeir_cand_contents.values()]
+    if ON_SERVER:
+        qrels_file_path = os.path.join(output_dir, f"qrels/test/mbeir_xhs_task{TASK_ID_XHS}_test_qrels.txt")
+        queries_file_path = os.path.join(output_dir, f"query/test/mbeir_xhs_task{TASK_ID_XHS}_test.jsonl")
+        cand_pool_file_path = os.path.join(output_dir, f"cand_pool/local/mbeir_xhs_task{TASK_ID_XHS}_cand_pool.jsonl")
+        if TRAIN:
+            qrels_file_path = os.path.join(output_dir, f"qrels/train/mbeir_xhsnote_task{TASK_ID_XHS}_train_qrels.txt")
+            queries_file_path = os.path.join(output_dir, f"query/train/mbeir_xhsnote_task{TASK_ID_XHS}_train.jsonl")
+            cand_pool_file_path = os.path.join(output_dir, f"cand_pool/local/mbeir_xhsnote_task{TASK_ID_XHS}_cand_pool.jsonl")
+    else:
+        qrels_file_path = os.path.join(output_dir, f"mbeir_xhs_task{TASK_ID_XHS}_test_qrels.txt")
+        queries_file_path = os.path.join(output_dir, f"mbeir_xhs_task{TASK_ID_XHS}_test.jsonl")
+        cand_pool_file_path = os.path.join(output_dir, f"mbeir_xhs_task{TASK_ID_XHS}_cand_pool.jsonl")
+
+    with open(qrels_file_path, 'w', encoding='utf-8') as f:
+        for line in qrels_lines:
+            f.write(line + '\n')
+    print(f"Generated qrels file: {qrels_file_path} ({len(qrels_lines)} entries)")
+
+    with open(queries_file_path, 'w', encoding='utf-8') as f:
+        for line in queries_jsonl_lines:
+            f.write(line + '\n')
+    print(f"Generated queries file: {queries_file_path} ({len(queries_jsonl_lines)} entries)")
+
+    with open(cand_pool_file_path, 'w', encoding='utf-8') as f:
+        for line in cand_pool_jsonl_lines:
+            f.write(line + '\n')
+    print(f"Generated candidate pool file: {cand_pool_file_path} ({len(cand_pool_jsonl_lines)} entries)")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate M-BEIR evaluation files from filtered XHS samples.")
+    parser.add_argument("--filtered_samples_path", type=str, required=True, 
+                        help="Path to the filtered_sample.json file (output of filter_our_test1k.py).")
+    parser.add_argument("--filtered_labels_path", type=str, default="", 
+                        help="Path to the filtered_labels.json file (output of filter_our_test1k.py).")
+    parser.add_argument("--output_dir", type=str, required=True, 
+                        help="Directory to save the generated M-BEIR files.")
+    
+    args = parser.parse_args()
+    
+    generate_mbeir_files(args.filtered_samples_path, args.filtered_labels_path, args.output_dir)
+
+'''
+python3 dataset/xhs_datatools/xhs_to_mbeir_format_goods.py \
+    --filtered_samples_path xhs_data/goods_data/from_20250401_to_20250407/from_20250401_to_20250407.json \
+    --output_dir M-BEIR
+'''

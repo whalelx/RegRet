@@ -173,7 +173,7 @@ def train():
         processor=processor,
     )
 
-    training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
+    # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
     trainer = Trainer(
         model=model,
         args=training_args,

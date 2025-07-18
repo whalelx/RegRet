@@ -9,11 +9,15 @@ MODULE_KEYWORDS: Dict[str, Dict[str, List]] = {
     "qwen2-vl-7b": {
         "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
         "vision_projector": ["visual.merger"],
+        "context_encoder": ["visual.context_layers"],
+        "llm_heads": ["lm_head"],
         "llm": ["model"]
     },
     "qwen2-vl-2b": {
         "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
         "vision_projector": ["visual.merger"],
+        "context_encoder": ["visual.context_layers"],
+        "llm_heads": ["lm_head"],
         "llm": ["model"]
     }
 }
@@ -42,7 +46,6 @@ register_model(
     model_family_id="qwen2-vl-2b",
     model_hf_path="./checkpoints/hf_models/Qwen2-VL-2B-Instruct"
 )
-
 
 # sanity check
 for model_family_id in MODEL_FAMILIES.values():

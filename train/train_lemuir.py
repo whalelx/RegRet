@@ -8,17 +8,25 @@ import math
 from pathlib import Path
 from typing import List, Optional
 import yaml
+import debugpy
 
 from accelerate.utils import DistributedType
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import torch
 import transformers
-from transformers import Trainer
+from transformers import Trainer, is_datasets_available
+import datasets
 from transformers.integrations import deepspeed
+from transformers.trainer import LengthGroupedSampler, has_length
+from torch.utils.data import Dataset, ConcatDataset, WeightedRandomSampler, RandomSampler
+
 
 from arguments import ModelArguments, DataArguments, TrainingArguments, LoraArguments
 from collators import COLLATORS
-from dataset.datasets_nli import LazySupervisedDataset
+from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
+from dataset.datasets_xhs import XHSDataset
+from dataset.datasets_dam import DAMDataset
+# from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
 from supported_models import MODULE_KEYWORDS
 from utils import (
@@ -26,6 +34,16 @@ from utils import (
     get_peft_state_maybe_zero_3
 )
 
+from trainer import CustomTrainer
+
+def setup_debugpy(local_rank):
+    import torch.distributed as dist
+    if dist.get_rank() == local_rank:
+        print(f"Debugger listening on rank {local_rank}")
+        debugpy.listen(("0.0.0.0", 9999))
+        print("Waiting for debugger attach...")
+        debugpy.wait_for_client()
+    dist.barrier()
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -74,8 +92,11 @@ def train():
         use_flash_attn=training_args.use_flash_attn,
         device_map=device_map,
     )
-    model, tokenizer, processor = loader.load()
+    model, tokenizer, processor = loader.load(pretrain=False)
     tokenizer.model_max_length = training_args.model_max_length
+
+    # Set language loss weight from training arguments
+    model.config.language_loss_weight = training_args.language_loss_weight
 
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
@@ -105,7 +126,8 @@ def train():
 
     # lora preparation
     llm_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm"]
-    # llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
+    llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
+
     if not (lora_args.use_lora or (training_args.train_vision_encoder and lora_args.use_vision_lora)):
         rank0_print("No LoRA enabled...")        
     else:
@@ -130,10 +152,10 @@ def train():
         if training_args.train_vision_projector:
             rank0_print("Vision projector will be fully trained...")
             full_modules.extend(vision_projector_keys)
-
+        
         # Always fully train the embedding head for contrastive learning
-        # rank0_print("Embedding/Language head will be fully trained...")
-        # full_modules.extend(llm_heads_keys)
+        rank0_print("Embedding/Language head will be fully trained...")
+        full_modules.extend(llm_heads_keys)
 
         lora_config = LoraConfig(
             r=lora_args.lora_r,
@@ -160,9 +182,42 @@ def train():
 
     # load data
     rank0_print("Loading data...")
-    train_dataset = LazySupervisedDataset(
-        data_path=data_args.data_path,
+    mbeir_dataset = LazySupervisedDataset(
+        query_data_path=data_args.query_data_path,
+        cand_pool_path=data_args.cand_pool_path,
+        instructions_path=data_args.instructions_path,
+        image_path_prefix=data_args.image_path_prefix,
+        tokenizer=tokenizer,
     )
+
+    xhs_dataset = XHSDataset(
+        query_data_path=data_args.xhs_query_data_path,
+        cand_pool_path=data_args.xhs_cand_pool_path,
+        instructions_path=data_args.instructions_path,
+        image_path_prefix=data_args.image_path_prefix,
+        tokenizer=tokenizer 
+    )
+    # dam_dataset = DAMDataset(
+    #     data_path=data_args.dam_data_path,
+    #     max_length=data_args.dam_max_samples
+    # )
+    # mbeir_language_dataset = MbeirLanguageDataset(
+    #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
+    #     cand_pool_path=data_args.cand_pool_path,
+    #     instructions_path=data_args.instructions_path,
+    #     image_path_prefix=data_args.image_path_prefix,
+    #     tokenizer=tokenizer,
+    #     max_length=110000
+    # )
+    # mmeb_dataset = MMEBDataset(
+    #     data_path=data_args.mmeb_data_path,
+    #     type=data_args.mmeb_type,
+    #     mode=data_args.mmeb_mode,
+    #     max_samples=data_args.mmeb_max_samples
+    # )
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
@@ -173,7 +228,7 @@ def train():
         processor=processor,
     )
 
-    training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
+    # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
     trainer = Trainer(
         model=model,
         args=training_args,

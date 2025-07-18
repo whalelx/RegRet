@@ -5,7 +5,7 @@ import os
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 module_path = os.path.join(current_file_path, "../")
 sys.path.append(module_path)
-from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
+from models.qwen2_5_vl import Qwen2_5_VLRetForConditionalGeneration
 import torch 
 import argparse
 from dataset.datasets_mbeir import QueryDataset, CandidateDataset
@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F 
 from accelerate import Accelerator
 import accelerate
+from tqdm import tqdm
 
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
@@ -58,16 +59,41 @@ def compute_recall_at_k(relevant_docs, retrieved_indices, k):
 
     # Check if there is an intersection between relevant docs and top k retrieved docs
     # If there is, we return 1, indicating successful retrieval; otherwise, we return 0
-    if relevant_docs_set.intersection(top_k_retrieved_indices_set):
-        return 1.0
-    else:
-        return 0.0
+    result = []
+    for x in relevant_docs_set:
+        filtered_top_k = top_k_retrieved_indices_set - (relevant_docs_set - {x})
+        if x in filtered_top_k:
+            result.append(1.0)
+        else:
+            result.append(0.0)
+    return result
 
+def compute_recall_at_k_rewrite(relevant_docs, retrieved_indices, k):
+
+    if not relevant_docs:
+        return 0.0 # Return 0 if there are no relevant documents
+
+    relevant_docs_set = set(relevant_docs)
+    retrieved_indices_set = set(retrieved_indices)
+
+    result = []
+    for target_doc in relevant_docs_set:
+        other_relevant_docs = relevant_docs_set - {target_doc}
+        num_other_relevant_retrieved = len(retrieved_indices_set.intersection(other_relevant_docs))
+        dynamic_k = k + num_other_relevant_retrieved
+        top_dynamic_k_retrieved_set = set(retrieved_indices[:dynamic_k])
+        
+        if target_doc in top_dynamic_k_retrieved_set:
+            result.append(1.0)
+        else:
+            result.append(0.0)
+            
+    return result
 
 def eval(args):
     original_model_id = args.original_model_id
     model_id = args.model_id 
-    model = Qwen2VLRetForConditionalGeneration.from_pretrained(
+    model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(
         model_id, 
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2", 
@@ -79,19 +105,19 @@ def eval(args):
 
     tokenizer = processor.tokenizer 
     tokenizer.padding_side = 'left'
-    tokenizer.model_max_length = args.model_max_length
+    # tokenizer.model_max_length = args.model_max_length
 
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
+        assert len(emb_tokens) == num_new_tokens
 
-        if len(emb_tokens) == num_new_tokens:
-            model.resize_token_embeddings(len(tokenizer))
+        model.resize_token_embeddings(len(tokenizer))
 
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
 
-    add_embed_token(tokenizer, model)
+    # add_embed_token(tokenizer, model)
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 
@@ -133,7 +159,6 @@ def eval(args):
     candidate_features = []
     candidate_ids = []
 
-    from tqdm import tqdm 
     with torch.no_grad():
         query_dataloader, candidate_dataloader, model = accelerator.prepare(query_dataloader, candidate_dataloader, model)
 
@@ -209,8 +234,8 @@ def eval(args):
             relevant_docs = qrel[query_name]
             retrieved_indices_for_qid = cand_names[ind]
             for k in k_lists:
-                recall_at_k = compute_recall_at_k(relevant_docs, retrieved_indices_for_qid, k)
-                res[f'recall_{k}'].append(recall_at_k)
+                recall_at_k = compute_recall_at_k_rewrite(relevant_docs, retrieved_indices_for_qid, k)
+                res[f'recall_{k}'].extend(recall_at_k)
 
         for k in k_lists:
             print(f"recall_at_{k} = {sum(res[f'recall_{k}']) / len(res[f'recall_{k}'])}")
