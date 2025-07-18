@@ -61,4 +61,5 @@ torchrun $DISTRIBUTED_ARGS train/train_nli.py \
     --use_lora $USE_LORA \
     --q_lora $Q_LORA \
     --lora_r $LORA_R \
-    --lora_alpha $LORA_ALPHA
+    --lora_alpha $LORA_ALPHA \
+    --use_flash_attn True

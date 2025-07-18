@@ -1,5 +1,5 @@
 import json
-from transformers import AutoProcessor, LlavaForConditionalGeneration, LlavaNextProcessor
+from transformers import AutoProcessor
 import sys 
 import os 
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -70,6 +70,7 @@ def eval(args):
     model = Qwen2VLRetForConditionalGeneration.from_pretrained(
         model_id, 
         torch_dtype=torch.bfloat16, 
+        attn_implementation="flash_attention_2", 
         low_cpu_mem_usage=True, 
     )
 
@@ -77,6 +78,7 @@ def eval(args):
     processor = AutoProcessor.from_pretrained(original_model_id)
 
     tokenizer = processor.tokenizer 
+    tokenizer.padding_side = 'left'
     tokenizer.model_max_length = args.model_max_length
 
     def add_embed_token(tokenizer, model, emb_token="<emb>"):

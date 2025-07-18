@@ -39,10 +39,12 @@ def rerank(args):
     rank_num = args.rank_num  
     processor = AutoProcessor.from_pretrained(original_model_id)
     tokenizer = processor.tokenizer 
+    tokenizer.padding_side = 'left'
 
     model = Qwen2VLForConditionalGeneration.from_pretrained(
         model_id, 
         torch_dtype=torch.bfloat16, 
+        attn_implementation="flash_attention_2",
         low_cpu_mem_usage=True, 
     )
     model.eval()

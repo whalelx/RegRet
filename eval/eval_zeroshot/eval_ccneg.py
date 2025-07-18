@@ -22,6 +22,7 @@ def eval(args):
     model = Qwen2VLRetForConditionalGeneration.from_pretrained(
         model_id, 
         torch_dtype=torch.bfloat16, 
+        attn_implementation="flash_attention_2",
         low_cpu_mem_usage=True, 
     )
 
@@ -29,6 +30,7 @@ def eval(args):
     processor = AutoProcessor.from_pretrained(original_model_id)
 
     tokenizer = processor.tokenizer 
+    tokenizer.padding_side = 'left'
 
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]

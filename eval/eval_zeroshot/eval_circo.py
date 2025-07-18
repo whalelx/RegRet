@@ -23,6 +23,7 @@ def eval(args):
     model = Qwen2VLRetForConditionalGeneration.from_pretrained(
         model_id, 
         torch_dtype=torch.bfloat16, 
+        attn_implementation="flash_attention_2",
         low_cpu_mem_usage=True, 
     )
 
@@ -30,6 +31,7 @@ def eval(args):
     processor = AutoProcessor.from_pretrained(original_model_id)
 
     tokenizer = processor.tokenizer 
+    tokenizer.padding_side = 'left'
 
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
@@ -87,15 +89,6 @@ def eval(args):
     with torch.no_grad():
         query_dataloader, candidate_dataloader, model = accelerator.prepare(query_dataloader, candidate_dataloader, model)
 
-        for batch in tqdm(query_dataloader, disable=not is_main_process):
-            batch = tensors_to_device(batch, device)
-            query_embed, batch_query_ids = model(**batch, inference=True)
-            query_embed = F.normalize(query_embed, dim=-1)
-            query_embed = accelerator.gather_for_metrics(query_embed)
-            batch_query_ids = accelerate.utils.gather_object(batch_query_ids)[:len(query_embed)]
-            query_ids.extend(batch_query_ids)
-            query_features.append(query_embed)
-
         for batch in tqdm(candidate_dataloader, disable=not is_main_process):
             batch = tensors_to_device(batch, device)
             candidate_embed, batch_candidate_ids = model(**batch, inference=True)
@@ -104,6 +97,15 @@ def eval(args):
             batch_candidate_ids = accelerator.gather_for_metrics(batch_candidate_ids)[:len(candidate_embed)]
             candidate_ids.extend(batch_candidate_ids)
             candidate_features.append(candidate_embed)
+
+        for batch in tqdm(query_dataloader, disable=not is_main_process):
+            batch = tensors_to_device(batch, device)
+            query_embed, batch_query_ids = model(**batch, inference=True)
+            query_embed = F.normalize(query_embed, dim=-1)
+            query_embed = accelerator.gather_for_metrics(query_embed)
+            batch_query_ids = accelerate.utils.gather_object(batch_query_ids)[:len(query_embed)]
+            query_ids.extend(batch_query_ids)
+            query_features.append(query_embed)
 
     query_features = torch.cat(query_features, dim=0)
     candidate_features = torch.cat(candidate_features, dim=0)

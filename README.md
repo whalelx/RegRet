@@ -1,8 +1,6 @@
-# LamRA: Large Multimodal Model as Your Advanced Retrieval Assistant
+# LEMUR: Leveraging Multimodal Embeddings for Fine-Grained Information Retrieval
 
 This repository is the official implementation of LamRA.
-
-[🏡 Project Page](https://code-kunkun.github.io/LamRA/) |  [📄 Paper](https://arxiv.org/pdf/2412.01720) | [🤗 LamRA-Ret-Pretrained](https://huggingface.co/code-kunkun/LamRA-Ret-Pretrained) | [🤗 LamRA-Ret](https://huggingface.co/code-kunkun/LamRA-Ret) | [🤗 LamRA-Rank](https://huggingface.co/code-kunkun/LamRA-Rank) | [🤗 Dataset](https://huggingface.co/datasets/code-kunkun/LamRA_Eval)
 
 ## Installation
 
@@ -19,6 +17,20 @@ pip install flash-attn --no-build-isolation
 
 ## New Version
 We have updated the version of Qwen2.5-VL in the `qwen2.5vl` branch.
+## Transformers Version
+As mentioned in the [issue of Qwen2.5VL](https://github.com/QwenLM/Qwen2.5-VL/issues/706), please install the environment according to the above instruction.
+
+Change the `apply_rotary_pos_emb_flashatt` function in `modeling_qwen2_5_vl.py`.
+```python
+def apply_rotary_pos_emb_flashatt(
+    q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    cos = cos.chunk(2, dim=-1)[0].contiguous()
+    sin = sin.chunk(2, dim=-1)[0].contiguous()
+    q_embed = apply_rotary_emb(q.float(), cos.float(), sin.float()).type_as(q) # revise here
+    k_embed = apply_rotary_emb(k.float(), cos.float(), sin.float()).type_as(k) # revise here
+    return q_embed, k_embed
+```
 
 ## Quickstart
 Please refer to the `demo.py`
@@ -26,6 +38,7 @@ Please refer to the `demo.py`
 ## Data Preparation 
 
 Download Qwen2-VL-7B and place it in `./checkpoints/hf_models/Qwen2-VL-7B-Instruct`
+Download Qwen2.5-VL-7B and place it in `./checkpoints/hf_models/Qwen2.5-VL-7B-Instruct`
 
 For pre-training dataset, please refer to [link](https://huggingface.co/datasets/princeton-nlp/datasets-for-simcse)
 

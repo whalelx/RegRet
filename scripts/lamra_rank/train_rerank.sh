@@ -87,4 +87,5 @@ torchrun $DISTRIBUTED_ARGS train/train_rerank.py \
     --lora_alpha $LORA_ALPHA \
     --model_local_path $MODEL_LOCAL_PATH \
     --rerank_data_path $RERANK_DATA_PATH \
-    --image_path_prefix $IMAGE_PATH_PREFIX
+    --image_path_prefix $IMAGE_PATH_PREFIX \
+    --use_flash_attn True
