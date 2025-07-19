@@ -30,6 +30,7 @@ def eval(args):
         original_model_id,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
+        attn_implementation="flash_attention_2"
     )
 
     # Load processor and tokenizer

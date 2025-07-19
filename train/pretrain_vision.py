@@ -81,8 +81,6 @@ def train():
     model, tokenizer, processor = loader.load(pretrain=False)
     tokenizer.model_max_length = training_args.model_max_length
 
-    # Set language loss weight from training arguments
-    model.config.language_loss_weight = training_args.language_loss_weight
 
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()

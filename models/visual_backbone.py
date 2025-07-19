@@ -3,7 +3,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers.models.qwen2_vl.modeling_qwen2_vl import VisionMlp, Qwen2VLVisionBlock, flash_attn_varlen_func, Qwen2VisionTransformerPretrainedModel
-from transformers.models.qwen2_vl.modeling_qwen2_vl import apply_rotary_pos_emb_vision
+from transformers.models.qwen2_vl.modeling_qwen2_vl import rotate_half
+
+def apply_rotary_pos_emb_vision(
+    q: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    orig_q_dtype = q.dtype
+    q = q.float()
+    cos, sin = cos.unsqueeze(-2).float(), sin.unsqueeze(-2).float()
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    q_embed = q_embed.to(orig_q_dtype)
+    return q_embed
 
 class ContextCrossAttentionFlashAttention2(nn.Module):
     def __init__(self, dim: int, num_heads: int = 16) -> None:
@@ -55,10 +65,10 @@ class ContextCrossAttentionFlashAttention2(nn.Module):
 class Qwen2ContextVisionBlock(nn.Module):
     def __init__(self, config, attn_implementation: str = "sdpa") -> None:
         super().__init__()
-        self.norm1 = nn.LayerNorm(config.hidden_size, eps=1e-6)
-        self.norm2 = nn.LayerNorm(config.hidden_size, eps=1e-6)
+        self.norm1 = nn.LayerNorm(config.embed_dim, eps=1e-6)
+        self.norm2 = nn.LayerNorm(config.embed_dim, eps=1e-6)
         assert attn_implementation == "flash_attention_2", "Unsupport attention implementation in ViT."
-        mlp_hidden_dim = int(config.hidden_size * config.mlp_ratio)
+        mlp_hidden_dim = int(config.embed_dim * config.mlp_ratio)
         self.cross_attn = ContextCrossAttentionFlashAttention2(config.embed_dim, num_heads=config.num_heads)
 
         self.mlp = VisionMlp(dim=config.embed_dim, hidden_dim=mlp_hidden_dim, hidden_act=config.hidden_act)

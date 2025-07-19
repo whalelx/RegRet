@@ -4,7 +4,7 @@ import torch
 
 from . import register_collator
 from .base import BaseDataCollator
-from .qwen2_vision_process import process_vision_info
+from .qwen2_vision_process import process_vision_info, process_vision_info_with_focal
 
 
 @register_collator("qwen2-vl-2b")
@@ -71,6 +71,17 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
             image_grid_thw = inputs['image_grid_thw']
         else:
             image_grid_thw = None 
+
+        if len(image_inputs) == 0:
+            return dict(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                pixel_values=None,
+                image_grid_thw=None,
+                labels=labels,
+                has_hard_negative=has_hard_negative,
+                reverse_idx = reverse_idx
+            )
 
         prefix_img_nums = len(image_nofocal)
         prefix_token_length = image_grid_thw[:prefix_img_nums].prod(1).sum().item()
