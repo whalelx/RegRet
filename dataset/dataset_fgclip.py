@@ -15,7 +15,7 @@ def lower_resolution(img: Image):
     """Lower image resolution if too large"""
     h, w = img.size
     if h > 1000 and w > 1000:
-        return img.resize((h//10, w//10))
+        return img.resize((h//2, w//2))
     else:
         return img
 
@@ -55,7 +55,7 @@ class FGCLIPDataset(Dataset):
         #     self.datasets.append(df)
         #     self.lengths.append(len(df))
         
-        self.max_length = min(max_length, len(self.dataset['train']))
+        self.max_length = min(max_length, len(self.dataset['train'])//2)
         self.mode = mode
 
     def __len__(self) -> int:
@@ -107,6 +107,9 @@ class FGCLIPDataset(Dataset):
         
         # Lower resolution if needed
         image = lower_resolution(image)
+        w,h = image.size
+        if w < 10 or h < 10:
+            return None
         
         # return_box_flag = False if random.random() < 0.8 else True
         # Process bbox info
@@ -173,7 +176,7 @@ class FGCLIPDataset(Dataset):
 
 if __name__ == "__main__":
     # Example usage
-    datapath = "/mnt/tidal-sh01/dataset/mmeb/fg-clip"
+    datapath = "/mnt/tidalfs-hssh01/dataset/mmeb/fg-clip"
 
     ds = FGCLIPDataset(datapath, max_length=1000)
     print(f"Dataset length: {len(ds)}")

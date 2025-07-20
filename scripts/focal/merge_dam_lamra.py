@@ -14,8 +14,8 @@ import os
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 module_path = os.path.join(current_file_path, "../../")
 sys.path.append(module_path)
-from models.qwen2_5_vl import Qwen2_5_VLRetForConditionalGeneration
-from transformers.models.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
+from models.qwen2_vl import Qwen2VLForConditionalGeneration
+
 import torch
 import copy
 
@@ -29,8 +29,8 @@ vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_vit_c+v+p_1e-4"
 # lamra_model = "./checkpoints/tempckpt"
 # vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision"
 
-base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(vision_backbone,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
-lamra_ret = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(lamra_model,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(vision_backbone,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+lamra_ret = Qwen2VLRetForConditionalGeneration.from_pretrained(lamra_model,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 
 lamra_ret.visual.load_state_dict(copy.deepcopy(base_model.visual.state_dict()))
 
