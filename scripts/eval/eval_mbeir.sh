@@ -11,15 +11,9 @@ ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
 
 IMAGE_PATH_PREFIX=/mnt/tidal-alsh01/dataset/mmeb/M-BEIR
 
-# CUDA_VISIBLE_DEVICES='0,1' accelerate launch --multi_gpu --main_process_port 29509 eval/eval_mbeir.py \
-#     --query_data_path ${IMAGE_PATH_PREFIX}/query/test/mbeir_xhs_task7_test.jsonl \
-#     --query_cand_pool_path ${IMAGE_PATH_PREFIX}/cand_pool/local/mbeir_xhs_task7_cand_pool.jsonl \
-#     --cand_pool_path ${IMAGE_PATH_PREFIX}/cand_pool/local/mbeir_xhs_task7_cand_pool.jsonl \
-#     --instructions_path ${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv \
-#     --qrels_path ${IMAGE_PATH_PREFIX}/qrels/test/mbeir_xhs_task7_test_qrels.txt \
-#     --original_model_id ${ORIGINAL_MODEL_ID} \
-#     --image_path_prefix ${IMAGE_PATH_PREFIX} \
-#     --model_id ${MODEL_ID}
+if [ -n "$1" ]; then
+    MODEL_ID="$1"
+fi
 
 # MODEL_ID="/mnt/tidal-alsh01/dataset/mmeb/LamRA-Ret-Qwen2.5VL-7b" #"./checkpoints/LamRA-Ret"
 # ORIGINAL_MODEL_ID="Qwen/Qwen2.5-VL-7B-Instruct"

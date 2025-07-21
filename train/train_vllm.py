@@ -167,9 +167,9 @@ def train():
         tokenizer=tokenizer,
         processor=processor,
     )
-    # training_args.save_strategy = "steps"
-    # training_args.save_steps = 1000
-    # training_args.save_total_limit = 3
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 1000
+    training_args.save_total_limit = 1
     
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
     trainer = CustomTrainer(
@@ -184,7 +184,19 @@ def train():
     trainer.save_state()
 
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=output_dir)
-    
+    processor.save_pretrained(output_dir)
+    copy_json_files(model_args.model_hf_path, output_dir)
+
+def copy_json_files(src_dir, output_dir):
+    '''save chat_template.json'''
+    import shutil
+    source_chat_file = os.path.join(src_dir, "chat_template.json")
+    if os.path.exists(source_chat_file):
+        target_chat_file = os.path.join(output_dir, "chat_template.json")
+        shutil.copy(source_chat_file, target_chat_file)
+        rank0_print(f"Copied chat_template.json from {source_chat_file}")
+    else:
+        rank0_print("Warning: chat_template.json not found in source model")
 
 if __name__ == "__main__":
     train()

@@ -20,13 +20,13 @@ DISTRIBUTED_ARGS="
 
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=qwen2_5-vl-7b
+MODEL_ID=${3:-"qwen2_5-vl-7b"}
 DATASET_PATH=/mnt/tidal-alsh01/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH="./tmp_ckpts/dam_cvp_global_nilpretrain" 
+MODEL_LOCAL_PATH=${2:-"./tmp_ckpts/dam_cvp_global_nilpretrain"}
 
 TRAIN_VISION_ENCODER=False                              
 USE_VISION_LORA=False                                  
@@ -36,7 +36,7 @@ USE_LORA=True
 Q_LORA=False                                           
 LORA_R=128                                                
 LORA_ALPHA=256                                           
-RUN_ID=${MODEL_ID}_dam_cvp_global_tune
+RUN_ID=${1:-${MODEL_ID}_dam_cvp_global_tune}
 
 DS_STAGE=zero3
 PER_DEVICE_BATCH_SIZE=70

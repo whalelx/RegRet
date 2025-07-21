@@ -20,13 +20,13 @@ DISTRIBUTED_ARGS="
 export HF_HOME=/mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=qwen2_5-vl-7b
+MODEL_ID=${3:-"qwen2_5-vl-7b"}
 DATASET_PATH=/mnt/tidal-alsh01/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH="./tmp_ckpts/dam_global+qwen2-5llm"
+MODEL_LOCAL_PATH=${2:-"./tmp_ckpts/dam_global+qwen2-5llm"}
 
 TRAIN_VISION_ENCODER=True
 USE_VISION_LORA=False
@@ -37,7 +37,7 @@ Q_LORA=False
 LORA_R=128                                              
 LORA_ALPHA=256
 # RUN_ID=${MODEL_ID}_DAM_encdec                                   
-RUN_ID=${MODEL_ID}_tune_llm
+RUN_ID=${1:-${MODEL_ID}_tune_llm}
 DS_STAGE=zero3
 PER_DEVICE_BATCH_SIZE=3
 GRAD_ACCUM=8                    
