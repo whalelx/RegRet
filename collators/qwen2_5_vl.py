@@ -72,6 +72,17 @@ class Qwen2_5VLDataCollator(BaseDataCollator):
         else:
             image_grid_thw = None 
 
+        if len(image_inputs) == 0:
+            return dict(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                pixel_values=None,
+                image_grid_thw=None,
+                labels=labels,
+                has_hard_negative=has_hard_negative,
+                reverse_idx = reverse_idx
+            )
+
         prefix_img_nums = len(image_nofocal)
         prefix_token_length = image_grid_thw[:prefix_img_nums].prod(1).sum().item()
         # pixel values and image_grithw 真实可用的东西

@@ -20,8 +20,8 @@ def add_embed_token(tokenizer, model, emb_token="<emb>"):
     num_new_tokens = tokenizer.add_tokens(emb_tokens)
     if num_new_tokens > 0:
         model.resize_token_embeddings(len(tokenizer))
-        emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
-        model.config.emb_token_ids = emb_token_ids
+    emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
+    model.config.emb_token_ids = emb_token_ids
 
 def eval(args):
     original_model_id = args.original_model_id
@@ -30,6 +30,7 @@ def eval(args):
         original_model_id,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
+        attn_implementation="flash_attention_2",
     )
 
     # Load processor and tokenizer

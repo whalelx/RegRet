@@ -31,6 +31,7 @@ LR=2e-4   # The training will be more stable under this learning rate
 MODEL_MAX_LEN=1024                                  
 
 
+# --model_local_path checkpoints/qwen2_5-vl-7b_tune_llm \
 torchrun $DISTRIBUTED_ARGS train/train_nli.py \
     --model_id $MODEL_ID \
     --model_local_path /mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-7B-Instruct/snapshots/cc594898137f460bfe9f0759e9844b3ce807cfb5 \

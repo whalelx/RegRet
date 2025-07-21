@@ -11,7 +11,8 @@ MODULE_KEYWORDS: Dict[str, Dict[str, List]] = {
         "context_encoder": ["visual.context_layers"],
         "vision_projector": ["visual.merger"],
         "llm": ["model", "model.emb_head"],
-        "llm_heads": ["llm_head"]
+        "llm_heads": ["lm_head"],
+        "language": ["model","lm_head"]
     },
 }
 

@@ -17,7 +17,7 @@ DISTRIBUTED_ARGS="
 #     --nproc_per_node ${NUM_GPUS} \
 #     --master_port ${MASTER_PORT}
 # "
-
+export HF_HOME=/mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub
 # arguments that are very likely to be changed
 # according to your own case
 MODEL_ID=qwen2_5-vl-7b
@@ -26,28 +26,28 @@ IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH=./checkpoints/Qwen2.5-VL-7B-Dam
+MODEL_LOCAL_PATH="./tmp_ckpts/dam_global+qwen2-5llm"
 
-TRAIN_VISION_ENCODER=True                              
-USE_VISION_LORA=False                                  
-TRAIN_VISION_PROJECTOR=True          
+TRAIN_VISION_ENCODER=True
+USE_VISION_LORA=False
+TRAIN_VISION_PROJECTOR=True # NOTE do not tune connector for now!!            
 
-USE_LORA=True                                           
-Q_LORA=False                                           
-LORA_R=128                                                
-LORA_ALPHA=256                                           
-RUN_ID=${MODEL_ID}_DAM_vit_c+v+p_1e-4
-
+USE_LORA=True                               
+Q_LORA=False                                          
+LORA_R=128                                              
+LORA_ALPHA=256
+# RUN_ID=${MODEL_ID}_DAM_encdec                                   
+RUN_ID=${MODEL_ID}_tune_llm
 DS_STAGE=zero3
-PER_DEVICE_BATCH_SIZE=6
-GRAD_ACCUM=1                                   
-NUM_EPOCHS=1       
+PER_DEVICE_BATCH_SIZE=3
+GRAD_ACCUM=8                    
+NUM_EPOCHS=1
 
-LR=1e-4
+LR=2e-5
 MODEL_MAX_LEN=1024
 
 
-torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
+torchrun $DISTRIBUTED_ARGS train/train_vllm.py \
     --model_id $MODEL_ID \
     --query_data_path $QUERY_DATA_PATH \
     --cand_pool_path $CAND_POOL_PATH \
@@ -55,9 +55,9 @@ torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
     --xhs_query_data_path ${DATASET_PATH}/M-BEIR/query/train/mbeir_xhsnote_task7_train.jsonl \
     --xhs_cand_pool_path ${DATASET_PATH}/M-BEIR/cand_pool/local/mbeir_xhsnote_task7_cand_pool.jsonl \
     --dam_data_path ${DATASET_PATH}/describe-anything-data \
-    --dam_max_samples 0 \
+    --dam_max_samples 50000 \
     --fgclip_data_path ${DATASET_PATH}/fg-clip \
-    --fgclip_max_samples 245500 \
+    --fgclip_max_samples 50000 \
     --output_dir ./checkpoints/$RUN_ID \
     --report_to tensorboard \
     --run_name $RUN_ID \

@@ -94,6 +94,8 @@ def train():
     vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
     if training_args.train_vision_encoder:
         vision_encoder_keys += MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
+    if True:
+        vision_encoder_keys += MODULE_KEYWORDS[model_args.model_family_id]["language"]
 
     rank0_print(f"ctx encoder is freezed... including:")
     for module in vision_encoder_keys:
@@ -107,14 +109,16 @@ def train():
             rank0_print(f"\t{module}")
             eval(f"model.{module}").requires_grad_(True)
 
-    # print trainable parameters for inspection
-    rank0_print("Trainable parameters:")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            rank0_print(f"\t{name}")
+    # # print trainable parameters for inspection
+    # rank0_print("Trainable parameters:")
+    # for name, param in model.named_parameters():
+    #     if param.requires_grad:
+    #         rank0_print(f"\t{name}")
 
-    param_cnt = sum(p.numel() for p in model.visual.context_layers.parameters() if p.requires_grad) / 1000000
-    rank0_print(f"context encoder extra params: {param_cnt}M")
+    # param_cnt = sum(p.numel() for p in model.visual.context_layers.parameters() if p.requires_grad) / 1000000
+    # param_cnt2 = sum(p.numel() for p in model.parameters() if p.requires_grad) / 1000000
+    # rank0_print(f"\033[91mcontext encoder extra params: {param_cnt}M, total trainable params:{param_cnt2}M\033[0m")
+
 
     # load data
     rank0_print("Loading data...")
@@ -122,6 +126,7 @@ def train():
         data_path=data_args.dam_data_path,
         max_length=data_args.dam_max_samples,
         mode = 'crop',
+        text_truncate_length = 512
     )
     fgclip_dataset = FGCLIPDataset(
         data_path=data_args.fgclip_data_path,
@@ -162,9 +167,9 @@ def train():
         tokenizer=tokenizer,
         processor=processor,
     )
-    training_args.save_strategy = "steps"
-    training_args.save_steps = 1000
-    training_args.save_total_limit = 1
+    # training_args.save_strategy = "steps"
+    # training_args.save_steps = 1000
+    # training_args.save_total_limit = 3
     
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
     trainer = CustomTrainer(
@@ -179,19 +184,7 @@ def train():
     trainer.save_state()
 
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=output_dir)
-    processor.save_pretrained(output_dir)
-    copy_json_files(model_args.model_hf_path, output_dir)
-
-def copy_json_files(src_dir, output_dir):
-    '''save chat_template.json'''
-    import shutil
-    source_chat_file = os.path.join(src_dir, "chat_template.json")
-    if os.path.exists(source_chat_file):
-        target_chat_file = os.path.join(output_dir, "chat_template.json")
-        shutil.copy(source_chat_file, target_chat_file)
-        rank0_print(f"Copied chat_template.json from {source_chat_file}")
-    else:
-        rank0_print("Warning: chat_template.json not found in source model")
+    
 
 if __name__ == "__main__":
     train()

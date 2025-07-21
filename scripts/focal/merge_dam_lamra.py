@@ -40,7 +40,6 @@ print("@gt attn_factor: ", base_model.visual.context_layers[0].attn_factor)
 lamra_ret.save_pretrained(save_dir)
 
 base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(save_dir,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
-breakpoint()
 
 processor = AutoProcessor.from_pretrained("./checkpoints/LEMUIR_Pretrain")
 processor.save_pretrained(save_dir)  # 这一句会把preprocessor_config.json、chat_template.json等复制过来
