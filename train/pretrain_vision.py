@@ -125,7 +125,8 @@ def train():
     )
     fgclip_dataset = FGCLIPDataset(
         data_path=data_args.fgclip_data_path,
-        max_length=data_args.fgclip_max_samples
+        max_length=data_args.fgclip_max_samples,
+        use_bbox_ratio=data_args.fgclip_use_bbox_ratio,
         # text_truncate_length=350
     )
     # mbeir_language_dataset = MbeirLanguageDataset(
