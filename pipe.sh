@@ -18,5 +18,5 @@ bash scripts/lemuir/merge_lora.sh ${RUNNAME}_stage3-5 ${RUNNAME}_stage3
 bash scripts/lemuir/finetune.sh ${RUNNAME}_stage4 ${RUNNAME}_stage3-5 ${MODEL_ID}
 
 # 评估
-bash scripts/eval/eval_mbeir.sh ${RUNNAME}_stage4
-bash scripts/eval/eval_xhs.sh ${RUNNAME}_stage4
+bash scripts/eval/eval_mbeir.sh ./checkpoints/${RUNNAME}_stage4
+bash scripts/eval/eval_xhs.sh ./checkpoints/${RUNNAME}_stage4

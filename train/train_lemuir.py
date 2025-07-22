@@ -221,7 +221,9 @@ def train():
     
     eval_dataset = None
     training_args.eval_strategy = "no"
-
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 400
+    training_args.save_total_limit = 1
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](
         tokenizer=tokenizer,
