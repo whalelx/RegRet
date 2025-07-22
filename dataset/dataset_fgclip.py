@@ -41,7 +41,7 @@ class FGCLIPDataset(Dataset):
         
         # Load parquet files from directory
         self.data_path = data_path
-        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet'))[:50]
+        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet')) #[50:]
         self.dataset = load_dataset('parquet', num_proc=16, data_files=self.parquet_files)
         self.text_truncate_length = text_truncate_length
         self.use_bbox_ratio = use_bbox_ratio

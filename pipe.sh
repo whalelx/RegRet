@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 # parameters: out/in/base-class
 MODEL_ID=qwen2_5-vl-7b
-RUNNAME=./checkpoints/${MODEL_ID}_DAM_ratio
+RUNNAME=${MODEL_ID}_DAM_cc3m
 STARTCKPT=./checkpoints/Qwen2.5-VL-7B-Dam
 
 # stage 1

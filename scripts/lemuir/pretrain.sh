@@ -7,7 +7,7 @@ DISTRIBUTED_ARGS="
 "
 
 MODEL_ID=${3:-"qwen2_5-vl-7b"}
-TRAIN_DATA_PATH=/mnt/tidal-alsh01/dataset/mmeb/datasets-for-simcse/nli_for_simcse.csv  # path to the training data csv file
+TRAIN_DATA_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb/datasets-for-simcse/nli_for_simcse.csv  # path to the training data csv file
 EVAL_DATA_PATH=None   
 
 TRAIN_VISION_ENCODER=False                           
@@ -29,7 +29,7 @@ NUM_EPOCHS=2
 LR=2e-4   # The training will be more stable under this learning rate
 # LR=4e-4 # This learning rate may result in unstable training; consider multiple attempts, lowering it, or using our provided checkpoint
 MODEL_MAX_LEN=1024                                  
-MODEL_LOCAL_PATH=${2:-"/mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-7B-Instruct/snapshots/cc594898137f460bfe9f0759e9844b3ce807cfb5"}
+MODEL_LOCAL_PATH=${2:-$(pwd | awk -F'/usr/' '{print $1}')/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-7B-Instruct/snapshots/cc594898137f460bfe9f0759e9844b3ce807cfb5}
 
 # --model_local_path checkpoints/qwen2_5-vl-7b_tune_llm \
 torchrun $DISTRIBUTED_ARGS train/train_nli.py \

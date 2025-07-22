@@ -8,7 +8,7 @@ class LLavaCC3MDataset(Dataset):
     def __init__(
         self, 
         image_data_path: str = "/mnt/tidal-alsh01/dataset/mmeb/llava-cc3m", 
-        json_path: str = "/mnt/tidal-alsh01/usr/liangxun/data/vpt/llava_alignment_seg_qwen_response_train.json", 
+        json_path: str = "/mnt/tidal-alsh01/usr/liangxun/data/vpt/llava_alignment_detection_qwen_response_train.json", 
         max_length: int = 100000,
     ) -> None:
         super(LLavaCC3MDataset, self).__init__()
@@ -49,3 +49,12 @@ class LLavaCC3MDataset(Dataset):
     def __getitem__(self, i) -> Dict[str, List]:
         j = i * 2 + 1
         return self.construct_messages(i), self.construct_messages(j)
+    
+if __name__ == "__main__":
+    datapath = "/mnt/tidal-alsh01/dataset/mmeb/llava-cc3m"
+    json_path = "/mnt/tidal-alsh01/usr/liangxun/data/vpt/llava_alignment_det_qwen_response_train.json"
+    ds = LLavaCC3MDataset(datapath, json_path)
+    print(f"Dataset length: {len(ds)}")
+    breakpoint()
+    ds[0]
+    ds[1]

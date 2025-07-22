@@ -17,11 +17,11 @@ DISTRIBUTED_ARGS="
 #     --nproc_per_node ${NUM_GPUS} \
 #     --master_port ${MASTER_PORT}
 # "
-export HF_HOME=/mnt/tidal-alsh01/usr/liangxun/.cache/huggingface/hub
+export HF_HOME=$(pwd | awk -F'/usr/' '{print $1}')/usr/liangxun/.cache/huggingface/hub
 # arguments that are very likely to be changed
 # according to your own case
 MODEL_ID=${3:-"qwen2_5-vl-7b"}
-DATASET_PATH=/mnt/tidal-alsh01/dataset/mmeb
+DATASET_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
