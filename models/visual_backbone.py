@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers.models.qwen2_vl.modeling_qwen2_vl import VisionMlp, Qwen2VLVisionBlock, flash_attn_varlen_func, Qwen2VisionTransformerPretrainedModel
+from transformers.models.qwen2_vl.modeling_qwen2_vl import VisionMlp, PatchMerger, flash_attn_varlen_func, Qwen2VisionTransformerPretrainedModel
 from transformers.models.qwen2_vl.modeling_qwen2_vl import rotate_half
 
 def apply_rotary_pos_emb_vision(
@@ -111,6 +111,11 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
         self.context_layers = nn.ModuleList(
             [Qwen2ContextVisionBlock(config, config._attn_implementation) for _ in range(config.depth)]
         )
+        self.ctx_merger = PatchMerger(
+            dim=config.out_hidden_size,
+            context_dim=config.hidden_size,
+            spatial_merge_size=config.spatial_merge_size,
+        )
     
     def forward(
             self, 
@@ -149,7 +154,8 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
             context_feature=context_feature,
             context_thw=context_thw,
         )
-        cimage_features = self.patch_merge(cimage_features)
+
+        cimage_features = self.ctx_merger(cimage_features)
 
         full_image_feature = full_image_feature[:context_token_nums]
         
