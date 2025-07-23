@@ -34,6 +34,8 @@ for blk, ctx in zip(base_model.visual.blocks, base_model.visual.context_layers):
     if ctx.cross_attn.kv_proj.bias is not None:
         ctx.cross_attn.kv_proj.bias.data.zero_()
 
+if hasattr(base_model.visual, "ctx_merger"):
+    base_model.visual.ctx_merger.load_state_dict(copy.deepcopy(base_model.visual.merger.state_dict()))
 
 
 # print(base_model.visual.context_layers[0].norm1.weight)

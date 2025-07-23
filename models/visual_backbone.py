@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 # from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VisionTransformerPretrainedModel
-from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VisionTransformerPretrainedModel, Qwen2_5_VLVisionBlock, Qwen2RMSNorm, flash_attn_varlen_func
+from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VisionTransformerPretrainedModel, Qwen2_5_VLPatchMerger, Qwen2RMSNorm, flash_attn_varlen_func
 from transformers.models.qwen2_5_vl.configuration_qwen2_5_vl import Qwen2_5_VLVisionConfig
 from transformers import AutoConfig, AutoModel, PretrainedConfig, PreTrainedModel
 from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLMLP  as Qwen2_5_ContextVisionMLP
@@ -168,6 +168,11 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
         self.context_layers = nn.ModuleList(
             [Qwen2_5_ContextVisionBlock(config, config._attn_implementation) for _ in range(config.depth)]
         )
+        self.ctx_merger = Qwen2_5_VLPatchMerger(
+            dim=config.out_hidden_size,
+            context_dim=config.hidden_size,
+            spatial_merge_size=config.spatial_merge_size,
+        )
     
     def forward(
             self, 
@@ -206,7 +211,8 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
             context_feature=context_feature,
             context_thw=context_thw,
         )
-        cimage_features = self.patch_merge(cimage_features, cimage_winidx)
+
+        cimage_features = self.ctx_merger(cimage_features)[torch.argsort(cimage_winidx), :]
 
         full_image_feature = full_image_feature[~mask]
         if full_image_feature.shape[0] == 0:
