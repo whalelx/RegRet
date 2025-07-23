@@ -15,7 +15,7 @@ def lower_resolution(img: Image):
     """Lower image resolution if too large"""
     h, w = img.size
     if h > 1000 and w > 1000:
-        return img.resize((h//10, w//10))
+        return img.resize((h//2, w//2))
     else:
         return img
 
@@ -34,15 +34,17 @@ class FGCLIPDataset(Dataset):
         data_path: str = 'mnt/tidal-alsh01/dataset/mmeb/fg-clip', 
         mode: str = 'train',
         max_length: int = 1200000,
-        text_truncate_length: int = 512
+        text_truncate_length: int = 512,
+        use_bbox_ratio: float = 0.0,
     ) -> None:
         super(FGCLIPDataset, self).__init__()
         
         # Load parquet files from directory
         self.data_path = data_path
-        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet'))[:50]
+        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet')) #[50:]
         self.dataset = load_dataset('parquet', num_proc=16, data_files=self.parquet_files)
         self.text_truncate_length = text_truncate_length
+        self.use_bbox_ratio = use_bbox_ratio
         if not self.parquet_files:
             raise ValueError(f"No parquet files found in {data_path}")
         
@@ -55,7 +57,7 @@ class FGCLIPDataset(Dataset):
         #     self.datasets.append(df)
         #     self.lengths.append(len(df))
         
-        self.max_length = min(max_length, len(self.dataset['train']))
+        self.max_length = min(max_length, len(self.dataset['train'])//2)
         self.mode = mode
 
     def __len__(self) -> int:
@@ -107,22 +109,29 @@ class FGCLIPDataset(Dataset):
         
         # Lower resolution if needed
         image = lower_resolution(image)
+        w,h = image.size
+        if w < 10 or h < 10:
+            return None
         
+        # return 16% of the data as box, which is around 200k 
+        use_box_flag = self.use_bbox_ratio > 0 and random.random() < self.use_bbox_ratio
         # Process bbox info
         # Pass the box process for now
-        if False: #bbox_info and len(bbox_info) > 0:
+        if use_box_flag and bbox_info and len(bbox_info) > 0:
             # Select a random bbox annotation
             selected_bbox = random.choice(bbox_info)
-            bbox = selected_bbox.get("bbox", [0, 0, 1, 1])
+            bbox = selected_bbox.get("bbox", [0, 0, 1., 1, -1])
+            bbox = bbox[:4]
             
             # Normalize bbox coordinates
-            image_width, image_height = image.size
-            normalized_bbox = normalize_bbox(bbox, image_width, image_height)
+            # image_width, image_height = image.size
+            # normalized_bbox = normalize_bbox(bbox, image_width, image_height)
+            normalized_bbox = bbox
             
             # Get bbox description
-            bbox_text = selected_bbox.get("short_expr", "") or selected_bbox.get("long_expr", "")
+            bbox_text = selected_bbox.get("long_expr", "") or selected_bbox.get("short_expr", "")
             if not bbox_text:
-                bbox_text = short_caption or caption
+                bbox_text = caption or short_caption
             bbox_text = bbox_text[:self.text_truncate_length]
             
             # Construct message with bbox (following DAM format)
@@ -131,7 +140,7 @@ class FGCLIPDataset(Dataset):
                     "role": "user",
                     "content": [
                         {"type": "image", "image": image, "box": normalized_bbox},
-                        {"type": "text", "text": f"\nDescribe the region in the image bounded by a red box."}
+                        {"type": "text", "text": f"\nDescribe the image in a short scentence."}
                     ]
                 },
                 {
