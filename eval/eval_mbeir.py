@@ -220,6 +220,7 @@ def eval(args):
             f.write(args.qrels_path + '\n')
             for k in k_lists:
                 f.write(f"recall_at_{k} = {sum(res[f'recall_{k}']) / len(res[f'recall_{k}'])}" + '\n')
+        print(f"Write output to {save_dir_name}/{model_name}_results.txt")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
