@@ -88,14 +88,33 @@ class TrainingArguments(transformers.TrainingArguments):
             "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
         },
     )
-    use_flash_attn: bool = False 
+    use_flash_attn: bool = False
     train_vision_encoder: bool = False
     train_vision_projector: bool = False
-    vision_projector_lr: float = None 
+    vision_projector_lr: float = None
     language_loss_weight: float = field(
         default=1.0,
         metadata={
             "help": "Weight for language generation loss in combined loss calculation."
+        },
+    )
+    # Layer decay optimizer arguments
+    layer_lr_decay: float = field(
+        default=1.0,
+        metadata={
+            "help": "Layer-wise learning rate decay factor. 1.0 means no decay."
+        },
+    )
+    layer_match_patterns: List[str] = field(
+        default_factory=list,
+        metadata={
+            "help": "Regex patterns to match layer names for layer decay. Should contain one capture group for layer number."
+        },
+    )
+    scale_ratio: float = field(
+        default=1.0,
+        metadata={
+            "help": "Scale ratio for learning rate adjustment."
         },
     )
     def __post_init__(self):

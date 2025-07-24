@@ -46,6 +46,10 @@ NUM_EPOCHS=1
 LR=1e-4
 MODEL_MAX_LEN=1024
 
+# Layer decay optimizer parameters
+LAYER_LR_DECAY=0.99
+SCALE_RATIO=0.1
+
 
 torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
     --model_id $MODEL_ID \
@@ -88,4 +92,7 @@ torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
     --lora_alpha $LORA_ALPHA \
     --model_local_path $MODEL_LOCAL_PATH \
     --image_path_prefix $IMAGE_PATH_PREFIX \
-    --use_flash_attn True
+    --use_flash_attn True \
+    --layer_lr_decay $LAYER_LR_DECAY \
+    --scale_ratio $SCALE_RATIO \
+    --layer_match_patterns "model\.visual\.blocks\.(\d+)" "model\.visual\.merger"

@@ -35,7 +35,7 @@ from utils import (
     get_peft_state_maybe_zero_3
 )
 
-from trainer import CustomTrainer
+from trainer import CustomTrainer, GroupLRTrainer
 
 def setup_debugpy(local_rank):
     import torch.distributed as dist
@@ -175,7 +175,7 @@ def train():
     training_args.save_total_limit = 1
     
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = Trainer(
+    trainer = GroupLRTrainer(
         model=model,
         args=training_args,
         data_collator=data_collator,

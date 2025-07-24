@@ -1,7 +1,9 @@
 """Copyright: Nabarun Goswami (2024)."""
 import math
 import time
+import re
 from typing import Dict, List, Optional, Union
+from collections import defaultdict
 
 import datasets
 import torch
@@ -71,7 +73,137 @@ class GroupBatchSampler(BatchSampler):
 
 ######### trainer #########
 
-class CustomTrainer(Trainer):
+class GroupLRTrainer(Trainer):
+    def create_optimizer(self):
+        """
+        Setup the optimizer with layer-wise learning rate decay support.
+        """
+        if self.optimizer is None:
+            # Check if layer_match_patterns is not empty and we should use layer decay
+            layer_match_patterns = getattr(self.args, 'layer_match_patterns', [])
+            if layer_match_patterns:
+                self.optimizer = self._create_layerdecay_optimizer()
+                return self.optimizer
+
+        return super().create_optimizer()
+
+    def _create_layerdecay_optimizer(self):
+        """
+        Create optimizer with layer-wise learning rate decay.
+        """
+        base_lr = self.args.learning_rate
+        layer_decay = getattr(self.args, 'layer_lr_decay', 1.0)
+        layer_match_patterns = getattr(self.args, 'layer_match_patterns', [])
+        scale_ratio = getattr(self.args, 'scale_ratio', 1.0)
+
+        decay_names = []
+
+        groups = defaultdict(list)
+        layer_ids_dict = defaultdict(list)
+        merger_groups = []  # Track merger groups to assign last layer LR
+
+        for name, param in self.model.named_parameters():
+            if not param.requires_grad:
+                continue
+            matched = False
+            for i, pat in enumerate(layer_match_patterns):
+                m = re.search(pat, name)
+                if m:
+                    # Check if pattern has a capture group (layer ID)
+                    if m.groups():
+                        lid = int(m.group(1))
+                        group = f"layer_{i}_{lid}"
+                        layer_ids_dict[i].append(lid)
+                    else:
+                        # No capture group (e.g., merger), use special group name
+                        group = f"merger_{i}"
+                        merger_groups.append((i, group))
+                    matched = True
+                    break
+            if not matched:
+                group = "default"
+            groups[group].append((name, param))
+
+        max_layer_dict = {i: max(lids) + 1 for i, lids in layer_ids_dict.items()}
+
+        param_groups = []
+        group_settings_list = []
+
+        for group, params in groups.items():
+            if group.startswith('layer'):
+                parts = group.split('_')
+                pattern_idx = int(parts[1])
+                lid = int(parts[2])
+                max_layer = max_layer_dict[pattern_idx]
+                group_lr = base_lr * scale_ratio * (layer_decay ** (max_layer - lid))
+            elif group.startswith('merger'):
+                group_lr = base_lr * scale_ratio * (layer_decay ** (max_layer - 1))  # Last layer LR
+            else:
+                group_lr = base_lr
+
+            decay, no_decay = [], []
+            decay_names_list, no_decay_names_list = [], []
+
+            for name, param in params:
+                if name in decay_names:
+                    decay.append(param)
+                    decay_names_list.append(name)
+                else:
+                    no_decay.append(param)
+                    no_decay_names_list.append(name)
+
+            if decay:
+                param_groups.append({
+                    "params": decay,
+                    "weight_decay": self.args.weight_decay,
+                    "lr": group_lr
+                })
+                group_settings_list.append({
+                    "group": group,
+                    "weight_decay": self.args.weight_decay,
+                    "lr": group_lr,
+                    "param_names": decay_names_list,
+                })
+
+            if no_decay:
+                param_groups.append({
+                    "params": no_decay,
+                    "weight_decay": 0.0,
+                    "lr": group_lr
+                })
+                group_settings_list.append({
+                    "group": group,
+                    "weight_decay": 0.0,
+                    "lr": group_lr,
+                    "param_names": no_decay_names_list,
+                })
+
+        # Log parameter group details
+        summary_lines = []
+        N = len(group_settings_list)
+        head, tail = 6, 3
+        param_head, param_tail = 3, 3
+
+        for i in list(range(min(head, N))) + (['...'] if N > head + tail else []) + list(range(max(N-tail, head), N)):
+            if i == '...':
+                summary_lines.append(f"    ... (omitting {N-head-tail} groups) ...")
+                continue
+            gs = group_settings_list[i]
+            line = (
+                f"param_group {i}: group={gs['group']}, lr={gs['lr']:.4e}, "
+                f"weight_decay={gs['weight_decay']}, num_params={len(gs['param_names'])}"
+            )
+            summary_lines.append(line)
+            names = gs['param_names']
+            preview_names = names[:param_head] + ['...'] + names[-param_tail:] if len(names) > param_head + param_tail else names
+            summary_lines.append(f"    params: {preview_names}")
+
+        logger.info("LayerDecayOptimizer param_groups detail:\n" + "\n".join(summary_lines))
+
+        optim_class, optim_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
+        return optim_class(param_groups, **optim_kwargs)
+
+class CustomTrainer(GroupLRTrainer):
     def __init__(self, extra_losses: List[str] = None, language_ds_startidx: int = 2, **kwargs):
         super().__init__(**kwargs)
         self.language_ds_startidx = language_ds_startidx
