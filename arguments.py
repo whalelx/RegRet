@@ -10,6 +10,7 @@ from supported_models import MODEL_HF_PATH, MODEL_FAMILIES
 class ModelArguments:
     model_id: str = field(default="llava-1.5-7b")
     model_local_path: Optional[str] = field(default=None)
+    use_emb_head: bool = field(default=True)
 
     def __post_init__(self):
         assert self.model_id in MODEL_HF_PATH, f"Unknown model_id: {self.model_id}"
@@ -63,6 +64,9 @@ class DataArguments:
     )
     fgclip_max_samples: int = field(
         default=0, metadata={"help": "Maximum number of samples to use from the fgclip data."}
+    )
+    fgclip_use_bbox_ratio: float = field(
+        default=0.0, metadata={"help": "The ratio of bbox description used"}
     )
     instructions_path: str = field(
         default=None, metadata={"help": "Path to the instructions data json file."}

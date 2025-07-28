@@ -34,15 +34,17 @@ class FGCLIPDataset(Dataset):
         data_path: str = 'mnt/tidal-alsh01/dataset/mmeb/fg-clip', 
         mode: str = 'train',
         max_length: int = 1200000,
-        text_truncate_length: int = 512
+        text_truncate_length: int = 512,
+        use_bbox_ratio: float = 0.0,
     ) -> None:
         super(FGCLIPDataset, self).__init__()
         
         # Load parquet files from directory
         self.data_path = data_path
-        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet'))
+        self.parquet_files = glob.glob(os.path.join(data_path, '*.parquet')) #[50:]
         self.dataset = load_dataset('parquet', num_proc=16, data_files=self.parquet_files)
         self.text_truncate_length = text_truncate_length
+        self.use_bbox_ratio = use_bbox_ratio
         if not self.parquet_files:
             raise ValueError(f"No parquet files found in {data_path}")
         
@@ -111,11 +113,11 @@ class FGCLIPDataset(Dataset):
         if w < 10 or h < 10:
             return None
         
-        # return_box_flag = False if random.random() < 0.8 else True
+        # return 16% of the data as box, which is around 200k 
+        use_box_flag = self.use_bbox_ratio > 0 and random.random() < self.use_bbox_ratio
         # Process bbox info
         # Pass the box process for now
-        if bbox_info and len(bbox_info) > 0: # and random.random() > 0.833: # return 16% of the data as box, which is around 200k 
-
+        if use_box_flag and bbox_info and len(bbox_info) > 0:
             # Select a random bbox annotation
             selected_bbox = random.choice(bbox_info)
             bbox = selected_bbox.get("bbox", [0, 0, 1., 1, -1])

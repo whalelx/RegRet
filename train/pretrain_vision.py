@@ -26,6 +26,7 @@ from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.dataset_fgclip import FGCLIPDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
+from dataset.datasets_llavacc3m import LLavaCC3MDataset
 # from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
 from supported_models import MODULE_KEYWORDS
@@ -90,7 +91,7 @@ def train():
 
     # freeze certain params
     vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
-    if training_args.train_vision_projector:
+    if training_args.train_vision_encoder:
         vision_encoder_keys += MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
 
     rank0_print(f"ctx encoder is freezed... including:")
@@ -121,19 +122,25 @@ def train():
         max_length=data_args.dam_max_samples,
         mode = 'crop',
     )
-    fgclip_dataset = FGCLIPDataset(
-        data_path=data_args.fgclip_data_path,
-        max_length=data_args.fgclip_max_samples
-        # text_truncate_length=350
-    )
-    # mbeir_language_dataset = MbeirLanguageDataset(
-    #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
-    #     cand_pool_path=data_args.cand_pool_path,
-    #     instructions_path=data_args.instructions_path,
-    #     image_path_prefix=data_args.image_path_prefix,
-    #     tokenizer=tokenizer,
-    #     max_length=90000
+    # fgclip_dataset = FGCLIPDataset(
+    #     data_path=data_args.fgclip_data_path,
+    #     max_length=50000,
+    #     use_bbox_ratio=data_args.fgclip_use_bbox_ratio,
+    #     # text_truncate_length=350
     # )
+    mbeir_language_dataset = MbeirLanguageDataset(
+        query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
+        cand_pool_path=data_args.cand_pool_path,
+        instructions_path=data_args.instructions_path,
+        image_path_prefix=data_args.image_path_prefix,
+        tokenizer=tokenizer,
+        max_length=90000
+    )
+    llavacc3m_dataset = LLavaCC3MDataset(
+        # image_data_path=data_args.llava_cc3m_data_path,
+        # json_path=data_args.llava_cc3m_json_path,
+        max_length=200000
+    )
     # mbeir_dataset = LazySupervisedDataset(
     #     query_data_path=data_args.query_data_path,
     #     cand_pool_path=data_args.cand_pool_path,
@@ -147,7 +154,8 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = torch.utils.data.ConcatDataset([fgclip_dataset, dam_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([fgclip_dataset, dam_dataset])
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_language_dataset, llavacc3m_dataset, dam_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, dam_dataset])
@@ -162,7 +170,7 @@ def train():
     )
     training_args.save_strategy = "steps"
     training_args.save_steps = 1000
-    training_args.save_total_limit = 3
+    training_args.save_total_limit = 1
     
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
     trainer = CustomTrainer(
@@ -170,14 +178,26 @@ def train():
         args=training_args,
         data_collator=data_collator,
         train_dataset=train_dataset,
-        language_ds_startidx=1
+        language_ds_startidx=2
     )
     
     trainer.train()
     trainer.save_state()
 
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=output_dir)
-    
+    processor.save_pretrained(output_dir)
+    copy_json_files(model_args.model_hf_path, output_dir)
+
+def copy_json_files(src_dir, output_dir):
+    '''save chat_template.json'''
+    import shutil
+    source_chat_file = os.path.join(src_dir, "chat_template.json")
+    if os.path.exists(source_chat_file):
+        target_chat_file = os.path.join(output_dir, "chat_template.json")
+        shutil.copy(source_chat_file, target_chat_file)
+        rank0_print(f"Copied chat_template.json from {source_chat_file}")
+    else:
+        rank0_print("Warning: chat_template.json not found in source model")
 
 if __name__ == "__main__":
     train()

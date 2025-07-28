@@ -1,12 +1,23 @@
-bash scripts/focal/vision_pretrain.sh
-bash scripts/focal/train_vllm.sh
-bash scripts/lemuir/pretrain.sh
-bash scripts/merge_lora.sh
+#! /usr/bin/bash
+# parameters: out/in/base-class
+# note to add ./checkpoints/ on the input path
+MODEL_ID=qwen2-vl-7b
+RUNNAME=${MODEL_ID}_DAM_ratiog
+STARTCKPT=./checkpoints/Qwen2-VL-7B-Dam
 
-cd checkpoints/qwen2-vl-2b_DAM_stage3-5
-cp /mnt/tidalfs-hssh01/dataset/mmeb/Qwen2-VL-2B-Instruct/chat_template.json .
-cp /mnt/tidalfs-hssh01/dataset/mmeb/Qwen2-VL-2B-Instruct/preprocessor_config.json .
-cd ../..
+# stage 1
+bash scripts/focal/vision_pretrain.sh ${RUNNAME}_stage1 ${STARTCKPT} ${MODEL_ID}
+# stage 2
+bash scripts/focal/train_vllm.sh ${RUNNAME}_stage2 ./checkpoints/${RUNNAME}_stage1 ${MODEL_ID}
+# stage 3
+bash scripts/lemuir/pretrain.sh ${RUNNAME}_stage3 ./checkpoints/${RUNNAME}_stage2 ${MODEL_ID}
 
-bash scripts/lemuir/finetune.sh
+# stage 3.5
+bash scripts/lemuir/merge_lora.sh ./checkpoints/${RUNNAME}_stage3-5 ./checkpoints/${RUNNAME}_stage3
 
+# stage 4
+bash scripts/lemuir/finetune.sh ${RUNNAME}_stage4 ./checkpoints/${RUNNAME}_stage3-5 ${MODEL_ID}
+
+# 评估
+bash scripts/eval/eval_mbeir.sh ./checkpoints/${RUNNAME}_stage4
+bash scripts/eval/eval_xhs.sh ./checkpoints/${RUNNAME}_stage4

@@ -17,16 +17,16 @@ DISTRIBUTED_ARGS="
 #     --nproc_per_node ${NUM_GPUS} \
 #     --master_port ${MASTER_PORT}
 # "
-export HF_HOME=/mnt/tidalfs-hssh01/usr/liangxun/.cache/huggingface/hub
+export HF_HOME=$(pwd | awk -F'/usr/' '{print $1}')/usr/liangxun/.cache/huggingface/hub
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=qwen2-vl-7b
-DATASET_PATH=/mnt/tidalfs-hssh01/dataset/mmeb
+MODEL_ID=${3:-"qwen2-vl-7b"}
+DATASET_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH=checkpoints/qwen2_5-vl-7b_DAM_ratio
+MODEL_LOCAL_PATH=${2:-"./tmp_ckpts/dam_global+qwen2-5llm"}
 
 TRAIN_VISION_ENCODER=True
 USE_VISION_LORA=False
@@ -37,7 +37,7 @@ Q_LORA=False
 LORA_R=128                                              
 LORA_ALPHA=256
 # RUN_ID=${MODEL_ID}_DAM_encdec                                   
-RUN_ID=${MODEL_ID}_DAM_ratio_stage2 # tune 400k
+RUN_ID=${1:-${MODEL_ID}_tune_llm}
 DS_STAGE=zero3
 PER_DEVICE_BATCH_SIZE=3
 GRAD_ACCUM=8                    
@@ -55,9 +55,9 @@ torchrun $DISTRIBUTED_ARGS train/train_vllm.py \
     --xhs_query_data_path ${DATASET_PATH}/M-BEIR/query/train/mbeir_xhsnote_task7_train.jsonl \
     --xhs_cand_pool_path ${DATASET_PATH}/M-BEIR/cand_pool/local/mbeir_xhsnote_task7_cand_pool.jsonl \
     --dam_data_path ${DATASET_PATH}/describe-anything-data \
-    --dam_max_samples 100000 \
+    --dam_max_samples 50000 \
     --fgclip_data_path ${DATASET_PATH}/fg-clip \
-    --fgclip_max_samples 100000 \
+    --fgclip_max_samples 50000 \
     --output_dir ./checkpoints/$RUN_ID \
     --report_to tensorboard \
     --run_name $RUN_ID \

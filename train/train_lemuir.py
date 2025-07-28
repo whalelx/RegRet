@@ -187,13 +187,13 @@ def train():
         tokenizer=tokenizer,
     )
 
-    xhs_dataset = XHSDataset(
-        query_data_path=data_args.xhs_query_data_path,
-        cand_pool_path=data_args.xhs_cand_pool_path,
-        instructions_path=data_args.instructions_path,
-        image_path_prefix=data_args.image_path_prefix,
-        tokenizer=tokenizer 
-    )
+    # xhs_dataset = XHSDataset(
+    #     query_data_path=data_args.xhs_query_data_path,
+    #     cand_pool_path=data_args.xhs_cand_pool_path,
+    #     instructions_path=data_args.instructions_path,
+    #     image_path_prefix=data_args.image_path_prefix,
+    #     tokenizer=tokenizer 
+    # )
     # dam_dataset = DAMDataset(
     #     data_path=data_args.dam_data_path,
     #     max_length=data_args.dam_max_samples
@@ -212,13 +212,16 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+    train_dataset = mbeir_dataset
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
-
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 500
+    training_args.save_total_limit = 1
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](
         tokenizer=tokenizer,

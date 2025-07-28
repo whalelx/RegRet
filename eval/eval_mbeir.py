@@ -84,7 +84,7 @@ def eval(args):
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-
+        
         if len(emb_tokens) == num_new_tokens:
             model.resize_token_embeddings(len(tokenizer))
 
@@ -110,8 +110,8 @@ def eval(args):
     query_data_collator = MbeirQueryDataCollator(tokenizer=tokenizer, processor=processor)
     cand_data_collator = MbeirCandidateDataCollator(tokenizer=tokenizer, processor=processor)
     
-    query_dataloader = DataLoader(query_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=query_data_collator)
-    candidate_dataloader = DataLoader(cand_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
+    query_dataloader = DataLoader(query_dataset, batch_size=40, num_workers=4, shuffle=False, collate_fn=query_data_collator)
+    candidate_dataloader = DataLoader(cand_dataset, batch_size=40, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
 
     accelerator = Accelerator(mixed_precision='bf16')
     device = accelerator.device 
@@ -220,6 +220,7 @@ def eval(args):
             f.write(args.qrels_path + '\n')
             for k in k_lists:
                 f.write(f"recall_at_{k} = {sum(res[f'recall_{k}']) / len(res[f'recall_{k}'])}" + '\n')
+        print(f"Write output to {save_dir_name}/{model_name}_results.txt")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
