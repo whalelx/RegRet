@@ -26,6 +26,86 @@ class Similarity(nn.Module):
     def forward(self, x, y):
         return self.cos(x, y) / self.temp
 
+class AngleSimilarity(nn.Module):
+    """
+    Angle similarity for complex (re+im) embeddings.
+    Calculates a pairwise similarity matrix.
+    """
+    def __init__(self, temp=0.05, pooling_strategy='sum'):
+        super().__init__()
+        self.temp = temp
+        assert pooling_strategy in ('sum', 'mean')
+        self.pooling_strategy = pooling_strategy
+
+    def forward(self, x, y=None):
+        """
+        Calculates pairwise angle similarity.
+        If y is None, computes pairwise similarity for x with itself.
+        
+        Args:
+            x (torch.Tensor): A batch of embeddings, shape [bs1, dim].
+            y (torch.Tensor, optional): Another batch of embeddings, shape [bs2, dim]. Defaults to None.
+
+        Returns:
+            torch.Tensor: A pairwise similarity matrix, shape [bs1, bs2].
+        """
+        if y is None:
+            y = x
+
+        # 1. Split embeddings into real and imaginary parts
+        # x: [bs1, dim] -> x_re, x_im: [bs1, dim/2]
+        # y: [bs2, dim] -> y_re, y_im: [bs2, dim/2]
+        x_re, x_im = torch.chunk(x, 2, dim=-1)
+        y_re, y_im = torch.chunk(y, 2, dim=-1)
+
+        # 2. Calculate complex division z = x / y for all pairs
+        # This is equivalent to z = (x * y_conj) / |y|^2
+        # Numerator: x * y_conj = (x_re + i*x_im) * (y_re - i*y_im)
+        # = (x_re*y_re + x_im*y_im) + i*(x_im*y_re - x_re*y_im)
+        
+        # Use matrix multiplication for pairwise calculation
+        # Resulting shapes: [bs1, bs2]
+        re_num = x_re @ y_re.T + x_im @ y_im.T
+        im_num = x_im @ y_re.T - x_re @ y_im.T
+
+        # Denominator: |y|^2 = y_re^2 + y_im^2, summed over the feature dimension
+        # Resulting shape: [bs2]
+        y_norm_sq = torch.sum(y_re**2 + y_im**2, dim=-1)
+        
+        # Add epsilon for numerical stability. Broadcasting handles the division.
+        z_denom = y_norm_sq + 1e-8
+        
+        re = re_num / z_denom
+        im = im_num / z_denom
+
+        # 3. Amplitude normalization (optional but recommended)
+        # This step normalizes out the magnitude difference |x|/|y|, 
+        # leaving only the pure angle difference information.
+        # dz: magnitude of x vectors, shape [bs1]
+        # dw: magnitude of y vectors, shape [bs2]
+        dz = torch.sqrt(torch.sum(x_re**2 + x_im**2, dim=-1) + 1e-8)
+        dw = torch.sqrt(y_norm_sq + 1e-8) # Reuse y_norm_sq for efficiency
+
+        # Create a [bs1, bs2] normalization matrix via broadcasting
+        norm_factor = dz[:, None] / dw[None, :]
+        
+        re = re / norm_factor
+        im = im / norm_factor
+
+        # 4. Pooling strategy
+        # re and im are now the cos and sin of the angle differences.
+        # We can sum or mean them to get a final score.
+        if self.pooling_strategy == 'sum':
+            pooled = re + im
+        else: # 'mean'
+            pooled = (re + im) / 2
+        
+        # 5. Final similarity score
+        # The angle delta can be approximated by this pooled value.
+        sim_angle = torch.abs(pooled) / self.temp
+        
+        return sim_angle
+
 @dataclass
 class ExtraLossOutput(SequenceClassifierOutput):
     loss_emb: torch.FloatTensor = None
@@ -220,12 +300,13 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
                 embed2 = torch.cat(embed2_list, 0)
 
             sim = Similarity(temp=0.05)
+            anglesim = AngleSimilarity()
 
             # add normalization
             embed1 = F.normalize(embed1, dim=-1)
             embed2 = F.normalize(embed2, dim=-1)
 
-            cos_sim = sim(embed1.unsqueeze(1), embed2.unsqueeze(0))
+            cos_sim = anglesim(embed1, embed2) if self.config.getattr('use_angle_sim', False) else sim(embed1.unsqueeze(1), embed2.unsqueeze(0))
 
             if has_hard_negative:
                 embed3 = F.normalize(embed3, dim=-1)
