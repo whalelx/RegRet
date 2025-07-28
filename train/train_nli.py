@@ -77,6 +77,12 @@ def train():
     model, tokenizer, processor = loader.load()
     tokenizer.model_max_length = training_args.model_max_length
 
+    # Set config parameters from training arguments
+    model.config.language_loss_weight = training_args.language_loss_weight
+    model.config.use_angle_sim = training_args.use_angle_sim
+    model.config.cos_sim_temp = training_args.cos_sim_temp
+    model.config.nocausal_attn = training_args.nocausal_attn
+
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
 

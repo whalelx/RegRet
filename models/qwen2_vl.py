@@ -117,6 +117,16 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
         super().__init__(config)
         self.visual = Qwen2ContextVisionTransformerPretrainedModel._from_config(config.vision_config)
 
+        # Set default values for new config parameters if not present
+        if not hasattr(config, 'language_loss_weight'):
+            config.language_loss_weight = 1.0
+        if not hasattr(config, 'use_angle_sim'):
+            config.use_angle_sim = False
+        if not hasattr(config, 'cos_sim_temp'):
+            config.cos_sim_temp = 0.05
+        if not hasattr(config, 'nocausal_attn'):
+            config.nocausal_attn = False
+
     def forward(
         self,
         input_ids: torch.LongTensor = None,
@@ -299,8 +309,8 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
                 embed1 = torch.cat(embed1_list, 0)
                 embed2 = torch.cat(embed2_list, 0)
 
-            sim = Similarity(temp=0.05)
-            anglesim = AngleSimilarity()
+            sim = Similarity(temp=self.config.cos_sim_temp)
+            anglesim = AngleSimilarity(temp=self.config.cos_sim_temp)
 
             # add normalization
             embed1 = F.normalize(embed1, dim=-1)

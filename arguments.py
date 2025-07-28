@@ -91,7 +91,23 @@ class TrainingArguments(transformers.TrainingArguments):
     use_flash_attn: bool = False
     train_vision_encoder: bool = False
     train_vision_projector: bool = False
-    vision_projector_lr: float = None 
+    vision_projector_lr: float = None
+    language_loss_weight: float = field(
+        default=1.0,
+        metadata={"help": "Weight for language generation loss in combined loss."}
+    )
+    use_angle_sim: bool = field(
+        default=False,
+        metadata={"help": "Whether to use angle similarity instead of cosine similarity."}
+    )
+    cos_sim_temp: float = field(
+        default=0.05,
+        metadata={"help": "Temperature parameter for cosine similarity computation."}
+    )
+    nocausal_attn: bool = field(
+        default=False,
+        metadata={"help": "Whether to disable causal attention mask."}
+    )
 
     def __post_init__(self):
         super().__post_init__()

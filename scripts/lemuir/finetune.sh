@@ -46,7 +46,7 @@ NUM_EPOCHS=1
 LR=0.00011
 MODEL_MAX_LEN=1024
 
-
+shift 3
 torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --model_id $MODEL_ID \
     --query_data_path $QUERY_DATA_PATH \
@@ -86,4 +86,5 @@ torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --lora_alpha $LORA_ALPHA \
     --model_local_path $MODEL_LOCAL_PATH \
     --image_path_prefix $IMAGE_PATH_PREFIX \
-    --use_flash_attn True
+    --use_flash_attn True \
+    $@
