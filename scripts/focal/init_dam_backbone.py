@@ -10,9 +10,9 @@ from transformers.models.qwen2_vl import Qwen2VLForConditionalGeneration
 import torch
 import copy
 
-size = "2"
+size = "7"
 save_dir = f"./checkpoints/Qwen2-VL-{size}B-Dam"
-basemodel = f"/mnt/tidalfs-hssh01/dataset/mmeb/Qwen2-VL-{size}B-Instruct"
+basemodel = f"Qwen/Qwen2-VL-{size}B-Instruct"
 
 
 base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(basemodel,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)

@@ -92,7 +92,7 @@ def train():
         use_flash_attn=training_args.use_flash_attn,
         device_map=device_map,
     )
-    model, tokenizer, processor = loader.load(pretrain=False)
+    model, tokenizer, processor = loader.load(pretrain=True)
     tokenizer.model_max_length = training_args.model_max_length
 
     # Set config parameters from training arguments

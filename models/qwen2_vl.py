@@ -262,10 +262,10 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
         contrastive_labels = labels[contrastive_indices] if labels is not None else None
 
         if contrastive_labels is not None and len(contrastive_indices)>0:
-            if self.config.use_emb_head:
-                contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
-            else:
-                contrastive_hidden_states = hidden_states[contrastive_indices]
+            # if self.config.use_emb_head:
+            #     contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
+            # else:
+            contrastive_hidden_states = hidden_states[contrastive_indices]
 
             if has_hard_negative:
                 contrastive_batch_size = len(contrastive_hidden_states) // 3

@@ -40,7 +40,7 @@ LORA_ALPHA=256
 RUN_ID=${1:-${MODEL_ID}_tune_llm}
 DS_STAGE=zero3
 PER_DEVICE_BATCH_SIZE=3
-GRAD_ACCUM=8                    
+GRAD_ACCUM=6                   
 NUM_EPOCHS=1
 
 LR=2e-5

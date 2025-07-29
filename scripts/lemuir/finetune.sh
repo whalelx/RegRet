@@ -39,7 +39,7 @@ LORA_ALPHA=256
 RUN_ID=${1:-${MODEL_ID}_dam_cvp_global_tune}
 
 DS_STAGE=zero3
-PER_DEVICE_BATCH_SIZE=70
+PER_DEVICE_BATCH_SIZE=72
 GRAD_ACCUM=2                                         
 NUM_EPOCHS=1                                         
 
