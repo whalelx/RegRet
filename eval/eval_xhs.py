@@ -118,6 +118,7 @@ def eval(args):
         model.config.emb_token_ids = emb_token_ids
 
     # add_embed_token(tokenizer, model)
+    model.config.nocausal_attn = training_args.nocausal_attn
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 

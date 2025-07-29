@@ -93,6 +93,8 @@ def eval(args):
 
     add_embed_token(tokenizer, model)
 
+    model.config.nocausal_attn = args.nocausal_attn
+
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 
         cand_pool_path=args.query_cand_pool_path,
@@ -240,6 +242,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_id', type=str)
     parser.add_argument('--query_cand_pool_path', type=str)
     parser.add_argument('--image_path_prefix', type=str)
+    parser.add_argument('--use_angle_sim', type=bool, default=False)
     parser.add_argument('--nocausal_attn', type=bool, default=False)
 
     args = parser.parse_args()

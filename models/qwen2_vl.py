@@ -126,6 +126,7 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
             config.cos_sim_temp = 0.05
         if not hasattr(config, 'nocausal_attn'):
             config.nocausal_attn = False
+        self.flag_set_causal = False
 
     def forward(
         self,
@@ -157,6 +158,11 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
         real_image_grid_thw=None,
         reverse_idx = None,
     ):
+        if not self.flag_set_causal:
+            for layer in self.model.layers:
+                layer.self_attn.is_causal = False
+            self.flag_set_causal = True
+
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
