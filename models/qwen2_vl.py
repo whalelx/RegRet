@@ -316,7 +316,7 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
             embed1 = F.normalize(embed1, dim=-1)
             embed2 = F.normalize(embed2, dim=-1)
 
-            cos_sim = anglesim(embed1, embed2) if self.config.getattr('use_angle_sim', False) else sim(embed1.unsqueeze(1), embed2.unsqueeze(0))
+            cos_sim = anglesim(embed1, embed2) if self.config.use_angle_sim else sim(embed1.unsqueeze(1), embed2.unsqueeze(0))
 
             if has_hard_negative:
                 embed3 = F.normalize(embed3, dim=-1)

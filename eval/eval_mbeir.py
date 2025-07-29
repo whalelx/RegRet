@@ -5,7 +5,7 @@ import os
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 module_path = os.path.join(current_file_path, "../")
 sys.path.append(module_path)
-from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
+from models.qwen2_vl import Qwen2VLRetForConditionalGeneration, AngleSimilarity
 import torch 
 import argparse
 from dataset.datasets_mbeir import QueryDataset, CandidateDataset
@@ -160,14 +160,21 @@ def eval(args):
 
     
     if is_main_process:
-        # Adjust the order according to ids 
-        import numpy as np 
+        # Adjust the order according to ids
+        import numpy as np
+
+        # Initialize AngleSimilarity for angle-based similarity calculation
+        angle_sim = AngleSimilarity(temp=1, pooling_strategy='sum')
 
         index = []
         scores = []
         for i in range(len(query_features)):
             query_feature = query_features[i:i+1]
-            score = query_feature @ candidate_features.T # (1, num_candidate)
+            if args.use_angle_sim:
+                # Use angle similarity instead of cosine similarity
+                score = angle_sim(query_feature, candidate_features) # (1, num_candidate)
+            else:
+                score = query_feature @ candidate_features.T # (1, num_candidate)
             topk_score, topk_indexes = torch.topk(score, k=50, dim=-1)
             topk_indexes = topk_indexes.squeeze().tolist()
             index.append(topk_indexes)
@@ -233,6 +240,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_id', type=str)
     parser.add_argument('--query_cand_pool_path', type=str)
     parser.add_argument('--image_path_prefix', type=str)
+    parser.add_argument('--nocausal_attn', type=bool, default=False)
 
     args = parser.parse_args()
     eval(args)
