@@ -19,6 +19,7 @@ from transformers.integrations import deepspeed
 from arguments import ModelArguments, DataArguments, TrainingArguments, LoraArguments
 from collators import COLLATORS
 from dataset.datasets_nli import LazySupervisedDataset
+from dataset.datasets_textemb import HotpotQADataset, MSMarcoDataset
 from loaders import LOADERS
 from supported_models import MODULE_KEYWORDS
 from utils import (
@@ -166,9 +167,13 @@ def train():
 
     # load data
     rank0_print("Loading data...")
-    train_dataset = LazySupervisedDataset(
+    nil_ds = LazySupervisedDataset(
         data_path=data_args.data_path,
     )
+
+    hotpot_ds = HotpotQADataset()
+    msmarco_ds = MSMarcoDataset(max_length=100000)
+    train_dataset = torch.utils.data.ConcatDataset([nil_ds, hotpot_ds, msmarco_ds])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
