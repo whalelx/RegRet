@@ -12,7 +12,11 @@ import copy
 
 size = "7"
 save_dir = f"./checkpoints/Qwen2-VL-{size}B-Dam"
-basemodel = f"Qwen/Qwen2-VL-{size}B-Instruct"
+if size == "7":
+    basemodel = f"Qwen/Qwen2-VL-7B-Instruct"
+elif size == "2"
+    basemodel = f"/mnt/tidal-alsh01/dataset/mmeb/Qwen2-VL-2B-Instruct"
+
 
 
 base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(basemodel,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)

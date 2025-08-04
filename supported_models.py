@@ -17,9 +17,10 @@ MODULE_KEYWORDS: Dict[str, Dict[str, List]] = {
     "qwen2-vl-2b": {
         "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
         "vision_projector": ["visual.merger"],
-        "context_encoder": ["visual.context_layers"],
+        "context_encoder": ["visual.context_layers","visual.ctx_merger"],
         "llm_heads": ["lm_head"],
-        "llm": ["model"]
+        "llm": ["model"],
+        "language": ["model","lm_head"]
     }
 }
 

@@ -137,6 +137,7 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
         inputs_embeds: Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
+        cache_position: Optional[torch.LongTensor] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
@@ -158,7 +159,7 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
         real_image_grid_thw=None,
         reverse_idx = None,
     ):
-        if not self.flag_set_causal:
+        if not self.flag_set_causal and self.config.nocausal_attn:
             for layer in self.model.layers:
                 layer.self_attn.is_causal = False
             self.flag_set_causal = True

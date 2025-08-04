@@ -112,8 +112,8 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
             [Qwen2ContextVisionBlock(config, config._attn_implementation) for _ in range(config.depth)]
         )
         self.ctx_merger = PatchMerger(
-            dim=config.out_hidden_size,
-            context_dim=config.hidden_size,
+            dim=config.hidden_size,
+            context_dim=config.embed_dim,
             spatial_merge_size=config.spatial_merge_size,
         )
     
