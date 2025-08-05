@@ -26,6 +26,8 @@ from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
+from dataset.datasets_visdoc import VisRAGSynDataset
+
 # from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
 from supported_models import MODULE_KEYWORDS
@@ -193,6 +195,10 @@ def train():
         tokenizer=tokenizer,
     )
 
+    # visdoc_dataset = VisRAGSynDataset(
+    #     max_length=200000
+    # )
+
     # xhs_dataset = XHSDataset(
     #     query_data_path=data_args.xhs_query_data_path,
     #     cand_pool_path=data_args.xhs_cand_pool_path,
@@ -219,6 +225,7 @@ def train():
     #     max_samples=data_args.mmeb_max_samples
     # )
     train_dataset = mbeir_dataset
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, visdoc_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
