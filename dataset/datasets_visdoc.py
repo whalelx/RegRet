@@ -129,6 +129,16 @@ class VisRAGSynDataset(Dataset):
         return query_message, cand_message
 
 
+class CopaliDataset(VisRAGSynDataset):
+    def __init__(self, 
+                 cache_dir = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset", 
+                 max_length: int = -1, split="train"):
+        super().__init__(
+            cache_dir = cache_dir, 
+            max_length = max_length,
+            split = split
+        )
+
 if __name__ == "__main__":
     try:
         ds = VisRAGSynDataset(data_args=data_args, split="train")

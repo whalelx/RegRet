@@ -26,6 +26,7 @@ from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
+from dataset.datasets_lemur import VisMinCLDataset, DamCLDataset, ImgDiffCLDataset
 from dataset.datasets_visdoc import VisRAGSynDataset
 
 # from dataset.datasets_mmeb import MMEBDataset
@@ -197,6 +198,40 @@ def train():
 
     # visdoc_dataset = VisRAGSynDataset(
     #     max_length=200000
+    # )
+    # copali_ds = CopaliDataset()
+
+    # vismin_dataset = VisMinCLDataset(
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_vismin_task6_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_vismin_task6_cand_pool.jsonl"),
+    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+    #     img_parquet_path=os.path.join(data_args.image_path_prefix, "../vismin"),
+    #     image_path_prefix="",
+    #     tokenizer=tokenizer,
+    # )
+
+    # imgdiff_dataset = ImgDiffCLDataset(
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_imgdiff_task6_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_imgdiff_task6_cand_pool.jsonl"),
+    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+    #     img_parquet_path=os.path.join(data_args.image_path_prefix, "../Img-Diff"),
+    #     tokenizer=tokenizer,
+    # )
+    # dam0_dataset = DamCLDataset(
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_dam_task0_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_dam_task0_cand_pool.jsonl"),
+    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+    #     parquet_path=data_args.dam_data_path,
+    #     image_path_prefix="",
+    #     tokenizer=tokenizer,
+    # )
+    # dam3_dataset = DamCLDataset(
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_dam_task3_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_dam_task3_cand_pool.jsonl"),
+    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+    #     parquet_path=data_args.dam_data_path,
+    #     image_path_prefix="",
+    #     tokenizer=tokenizer,
     # )
 
     # xhs_dataset = XHSDataset(
