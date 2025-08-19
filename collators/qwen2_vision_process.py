@@ -410,32 +410,116 @@ def process_vision_info(
         return image_inputs, video_inputs, {'fps': video_sample_fps_list}
     return image_inputs, video_inputs
 
+class Id2Mask:
+    def __init__(self, id_dict: dict):
+        self.id_dict = id_dict
+
+    @property
+    def crop_full(self) -> list[int]:
+        return self.id_dict.get("crop_full", [])
+
+    @property
+    def crop_crop(self) -> list[int]:
+        return self.id_dict.get("crop_crop", [])
+
+    @property
+    def concat_full(self) -> list[int]:
+        return self.id_dict.get("concat_full", [])
+
+    @property
+    def concat_crop(self) -> list[int]:
+        return self.id_dict.get("concat_crop", [])
+
+    @property
+    def justfull(self) -> list[int]:
+        return self.id_dict.get("justfull", [])
+
+    @property
+    def multi_img_texts(self) -> list[int]:
+        return self.id_dict.get("multi_img_texts", [])
+    
+    @staticmethod
+    def get_imgtoken_ids(self, key:str, thw: torch.Tensor) -> list[int]: # thw: (batchsz, 3)
+        ids = getattr(self, key)
+        batchsz = thw.shape[0]
+        total_len = thw.prod(1)  # Calculate total tokens for each image
+        if len(ids) == 0:
+            return []
+        
+        # Calculate cumulative sum of token lengths·
+        total_len = thw.prod(1)  # (batchsz,)
+        cumsum = torch.cat([torch.zeros(1), total_len.cumsum(0)])[:-1]  # (batchsz,)
+        
+        # Create mask for selected indices
+        mask = torch.zeros(batchsz, dtype=torch.bool)
+        mask[ids] = True
+        
+        # Get start positions for each selected image
+        starts = cumsum[mask]
+        lengths = total_len[mask]
+        
+        # Generate all token positions efficiently
+        result = torch.cat([torch.arange(start, start + length) for start, length in zip(starts, lengths)])
+        
+        return result.tolist()
+
 
 def process_vision_info_with_focal(
     conversations: list[dict] | list[list[dict]],
     return_video_kwargs: bool = False,
     box_op: str = "draw",
-) -> tuple[list[Image.Image] | None, list[torch.Tensor | list[Image.Image]] | None, Optional[dict]]:
+) -> tuple[list[Image.Image] , Id2Mask]:
 
     vision_infos, ids, batchsz = extract_vision_info(conversations, return_ids=True)
     ## Read images or videos
 
-    image_nofocal = []
-    image_focal_full = []
-    image_focal_crop = []
-    id_nofocal = []
-    id_focal = []
+    image_inputs = []
+    id_crop_crop = []
+    id_crop_full = []
+    id_concat_full = []
+    id_concat_crop = []
+    id_justfull = []
+    multi_img_texts = [] # 我们的concat模式下需要添加一张图片
+    cnt = 0
 
     for i, vision_info in zip(ids, vision_infos):
         if "image" in vision_info or "image_url" in vision_info:
-            if vision_info.get("box", None) is None:
-                image_nofocal.append(fetch_image(vision_info, box_op="none"))
-                id_nofocal.append(i)
-            else:
-                image_focal_crop.append(fetch_image(vision_info, box_op="crop"))
-                image_focal_full.append(fetch_image(vision_info, box_op="none"))
-                id_focal.append(i)
-    resort_id = id_nofocal+id_focal
-    other_id = [i for i in range(batchsz) if i not in resort_id]
-    resort_id = resort_id + other_id
-    return image_nofocal, image_focal_full, image_focal_crop, resort_id
+            has_box = vision_info.get("box", None) is not None
+            box_mode = vision_info.get("box_op", box_op)
+            if not has_box or box_mode == "none":
+                image_inputs.append(fetch_image(vision_info, box_op="none"))
+                id_justfull.append(cnt)
+                cnt += 1
+            elif box_mode == "crop":
+                image_inputs.append(fetch_image(vision_info, box_op="none"))
+                id_crop_full.append(cnt)
+                image_inputs.append(fetch_image(vision_info, box_op="crop"))
+                id_crop_crop.append(cnt+1)
+                cnt += 2
+            elif box_mode == "draw":
+                image_inputs.append(fetch_image(vision_info, box_op="draw"))
+                id_justfull.append(cnt)
+                cnt += 1
+            elif box_mode == "concat":
+                image_inputs.append(fetch_image(vision_info, box_op="none"))
+                id_concat_full.append(cnt)
+                image_inputs.append(fetch_image(vision_info, box_op="crop"))
+                id_concat_crop.append(cnt+1)
+                multi_img_texts.append(i)
+                # for global vit models
+                # image_inputs.append(fetch_image(vision_info, box_op="none"))
+                # id_justfull.append(cnt)
+                # image_inputs.append(fetch_image(vision_info, box_op="crop"))
+                # id_justfull.append(cnt+1)
+                cnt += 2
+
+    id_dict = Id2Mask({
+        "crop_full": id_crop_full,
+        "crop_crop": id_crop_crop,
+        "concat_full": id_concat_full,
+        "concat_crop": id_concat_crop,
+        "justfull": id_justfull,
+        "multi_img_texts": multi_img_texts
+    })
+
+    return image_inputs, id_dict

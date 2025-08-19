@@ -121,55 +121,66 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
             self, 
             pixel_values, 
             grid_thw, 
-            focal_pixel_values, 
-            focal_image_grid_thw,
-            focal_image_ids,
+            id_dict=None,
+            group_imgs=None,
             enc_dec_arch=False, 
         ):
-
+        justfull_image_num = len(id_dict.justfull)
+        full_pixel_values = torch.cat([group_imgs[k]['pixel_values'] for k in ("justfull", "concat_full", "crop_full")], dim=0)
+        full_grid_thw = torch.cat([group_imgs[k]['image_grid_thw'] for k in ("justfull", "concat_full", "crop_full")], dim=0)
         full_image_feature_list = self.extract_feature(
-            pixel_values,
-            grid_thw,
+            full_pixel_values,
+            full_grid_thw,
             output_hidden_states=enc_dec_arch
         )
         full_image_feature = full_image_feature_list[-1] if enc_dec_arch else full_image_feature_list
         
-        if focal_image_ids is None or focal_image_ids.size(0) == 0:
+        if grid_thw.prod(1).sum() == justfull_image_num:
             return self.patch_merge(full_image_feature)
-        
-        seq_len = full_image_feature.shape[0]
-        focal_image_ids = focal_image_ids.to(full_image_feature.device)
 
-        nofocal_image_nums = focal_image_ids[0].item()
-        context_thw = grid_thw[focal_image_ids, :]
-        context_token_nums = (grid_thw.prod(1).sum() - context_thw.prod(1).sum()).item()
+        crop_pixel_values = torch.cat([group_imgs[k]['pixel_values'] for k in ("concat_crop", "crop_crop")], dim=0)
+        crop_grid_thw = torch.cat([group_imgs[k]['image_grid_thw'] for k in ("concat_crop", "crop_crop")], dim=0)
+
+        context_thw = full_grid_thw[justfull_image_num:, :]
+        justfull_token_nums = (grid_thw.prod(1).sum() - context_thw.prod(1).sum()).item()
+
         if enc_dec_arch:
-            context_feature = [f[context_token_nums:] for f in full_image_feature_list]
+            context_feature = [f[justfull_token_nums:] for f in full_image_feature_list]
         else:
-            context_feature = full_image_feature[context_token_nums:]
+            context_feature = full_image_feature[justfull_token_nums:]
 
         cimage_features = self.extract_feature(
-            focal_pixel_values,
-            focal_image_grid_thw,
+            crop_pixel_values,
+            crop_grid_thw,
             context_feature=context_feature,
             context_thw=context_thw,
         )
-
         cimage_features = self.ctx_merger(cimage_features)
 
-        full_image_feature = full_image_feature[:context_token_nums]
-        
-        if full_image_feature.shape[0] == 0:
+        if grid_thw.prod(1).sum() == len(id_dict.crop_crop):
             return cimage_features
-        else:
-            # HACK suppose cimages are always behind the full images
-            full_image_feature = self.patch_merge(full_image_feature)
-            final_image_feature = torch.cat([
-                full_image_feature,
-                cimage_features
-            ], dim=0)
+        
+        crop_full_image_num = len(id_dict.crop_full)
+        crop_full_token_num = group_imgs["crop_full"]["image_grid_thw"].prod(1).sum().item()
+        
+        all_feature = torch.cat([
+            self.patch_merge(full_image_feature[:-crop_full_token_num]),
+            cimage_features,
+        ], dim=0)
 
-            return final_image_feature
+        all_grid_thw = torch.cat([
+            full_grid_thw[:-crop_full_image_num],
+            crop_grid_thw,
+        ], dim=0)
+        
+        shuffled_image_indices = torch.tensor(id_dict.justfull + id_dict.crop_crop + id_dict.concat_crop + id_dict.concat_full, device=all_feature.device)
+        sort_indices = torch.argsort(shuffled_image_indices)
+
+        split_sizes = all_grid_thw.prod(dim=1).tolist()
+        feature_blocks_list = torch.split(all_feature, split_sizes, dim=0)
+        
+        all_feature = torch.cat([feature_blocks_list[i] for i in sort_indices], dim=0)
+        return all_feature
     
     def extract_feature(
             self,
