@@ -24,7 +24,7 @@ from arguments import ModelArguments, DataArguments, TrainingArguments, LoraArgu
 from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.dataset_fgclip import FGCLIPDataset
-from dataset.datasets_xhs import XHSDataset
+from dataset.datasets_lemur import XHSDataset
 from dataset.datasets_dam import DAMDataset
 from dataset.datasets_llavacc3m import LLavaCC3MDataset
 # from dataset.datasets_mmeb import MMEBDataset

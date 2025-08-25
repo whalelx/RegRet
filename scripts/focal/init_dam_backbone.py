@@ -14,7 +14,7 @@ size = "7"
 save_dir = f"./checkpoints/Qwen2-VL-{size}B-Dam"
 if size == "7":
     basemodel = f"Qwen/Qwen2-VL-7B-Instruct"
-elif size == "2"
+elif size == "2":
     basemodel = f"/mnt/tidal-alsh01/dataset/mmeb/Qwen2-VL-2B-Instruct"
 
 

@@ -24,10 +24,9 @@ from torch.utils.data import Dataset, ConcatDataset, WeightedRandomSampler, Rand
 from arguments import ModelArguments, DataArguments, TrainingArguments, LoraArguments
 from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
-from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
-from dataset.datasets_lemur import VisMinCLDataset, DamCLDataset, ImgDiffCLDataset
-from dataset.datasets_visdoc import VisRAGSynDataset
+from dataset.datasets_lemur import VisMinCLDataset, DamCLDataset, ImgDiffCLDataset, XHSDataset
+from dataset.datasets_visdoc import VisRAGSynDataset, CopaliDataset
 
 # from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
@@ -202,8 +201,8 @@ def train():
     # copali_ds = CopaliDataset()
 
     # vismin_dataset = VisMinCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_vismin_task6_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_vismin_task6_cand_pool.jsonl"),
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_vismin_task6_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_vismin_task6_cand_pool.jsonl"),
     #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
     #     img_parquet_path=os.path.join(data_args.image_path_prefix, "../vismin"),
     #     image_path_prefix="",
@@ -211,23 +210,23 @@ def train():
     # )
 
     # imgdiff_dataset = ImgDiffCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_imgdiff_task6_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_imgdiff_task6_cand_pool.jsonl"),
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_imgdiff_task6_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_imgdiff_task6_cand_pool.jsonl"),
     #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
-    #     img_parquet_path=os.path.join(data_args.image_path_prefix, "../Img-Diff"),
+    #     image_path_prefix=os.path.join(data_args.image_path_prefix, "../Img-Diff"),
     #     tokenizer=tokenizer,
     # )
     # dam0_dataset = DamCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_dam_task0_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_dam_task0_cand_pool.jsonl"),
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_dam_task0_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_dam_task0_cand_pool.jsonl"),
     #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
     #     parquet_path=data_args.dam_data_path,
     #     image_path_prefix="",
     #     tokenizer=tokenizer,
     # )
     # dam3_dataset = DamCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/union_train/mbeir_dam_task3_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/global/mbeir_dam_task3_cand_pool.jsonl"),
+    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_dam_task3_train.jsonl"),
+    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_dam_task3_cand_pool.jsonl"),
     #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
     #     parquet_path=data_args.dam_data_path,
     #     image_path_prefix="",
@@ -238,7 +237,7 @@ def train():
     #     query_data_path=data_args.xhs_query_data_path,
     #     cand_pool_path=data_args.xhs_cand_pool_path,
     #     instructions_path=data_args.instructions_path,
-    #     image_path_prefix=data_args.image_path_prefix,
+    #     image_path_prefix="/mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/images/",
     #     tokenizer=tokenizer 
     # )
     # dam_dataset = DAMDataset(
@@ -260,6 +259,7 @@ def train():
     #     max_samples=data_args.mmeb_max_samples
     # )
     train_dataset = mbeir_dataset
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam3_dataset, dam0_dataset, imgdiff_dataset, vismin_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, visdoc_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
@@ -267,9 +267,9 @@ def train():
     
     eval_dataset = None
     training_args.eval_strategy = "no"
-    training_args.save_strategy = "steps"
-    training_args.save_steps = 500
-    training_args.save_total_limit = 1
+    # training_args.save_strategy = "steps"
+    # training_args.save_steps = 500
+    # training_args.save_total_limit = 1
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](
         tokenizer=tokenizer,

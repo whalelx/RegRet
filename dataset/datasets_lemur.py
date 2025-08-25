@@ -32,7 +32,7 @@ class VisMinCLDataset(LazySupervisedDataset):
             print(f"Warning: Row number {row_idx} is out of range")
             return None
     
-    def _prepare_data_dict(self, txt, img_path, box=None):
+    def _prepare_data_dict(self,  txt, img_path, image_path_prefix,box=None):
         """Prepare data dictionary, handling row numbers for images"""
         if img_path is None or img_path == '':
             return {'txt': txt, "box": box}
@@ -46,12 +46,13 @@ class VisMinCLDataset(LazySupervisedDataset):
             return {"txt": txt, "image": image, "box": box}
 
     def construct_messages(self, data_dict):
+        get_boxop = BOX_OP_DICT[self.__class__]
         if 'txt' in data_dict and 'image' in data_dict:
             message = [
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -67,7 +68,7 @@ class VisMinCLDataset(LazySupervisedDataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -92,12 +93,13 @@ class ImgDiffCLDataset(LazySupervisedDataset):
         super().__init__(query_data_path, cand_pool_path, instructions_path, image_path_prefix, tokenizer)
     
     def construct_messages(self, data_dict):
+        get_boxop = BOX_OP_DICT[self.__class__]
         if 'txt' in data_dict and 'image' in data_dict:
             message = [
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -113,7 +115,7 @@ class ImgDiffCLDataset(LazySupervisedDataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -149,13 +151,13 @@ class DamCLDataset(LazySupervisedDataset):
         else:
             raise ValueError(f"Invalid row number {row_number_str}")
 
-        if row_idx < len(self.dataset):
-            return self.dataset[row_idx]['jpg']
+        if row_idx < len(self.dataset[split_name]):
+            return self.dataset[split_name][row_idx]['jpg']
         else:
             print(f"Warning: Row number {row_idx} is out of range")
             return None
     
-    def _prepare_data_dict(self, txt, img_path, box=None):
+    def _prepare_data_dict(self,  txt, img_path, image_path_prefix,box=None):
         """Prepare data dictionary, handling row numbers for images"""
         if img_path is None or img_path == '':
             return {'txt': txt, "box": box}
@@ -169,12 +171,13 @@ class DamCLDataset(LazySupervisedDataset):
             return {"txt": txt, "image": image, "box": box}
 
     def construct_messages(self, data_dict):
+        get_boxop = BOX_OP_DICT[self.__class__]
         if 'txt' in data_dict and 'image' in data_dict:
             message = [
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -205,7 +208,7 @@ class DamCLDataset(LazySupervisedDataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -218,3 +221,77 @@ class DamCLDataset(LazySupervisedDataset):
             ]
         return message
     
+
+class XHSDataset(LazySupervisedDataset):
+    """
+    Dataset for supervised fine-tuning 
+    """
+
+    def __init__(
+        self, 
+        query_data_path: str, 
+        cand_pool_path: str, 
+        instructions_path: str,
+        image_path_prefix: str,
+        tokenizer = None 
+    ) -> None:
+        super(XHSDataset, self).__init__(query_data_path, cand_pool_path, instructions_path, image_path_prefix, tokenizer)
+
+    def construct_messages(self, data_dict):
+        get_boxop = BOX_OP_DICT[self.__class__]
+        if 'txt' in data_dict and 'image' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                    {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
+                        {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": f"<emb>."}
+                    ]
+                },
+            ]
+        elif 'txt' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"{data_dict['txt']}\nSummarize above sentence in one word: "}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": f"<emb>."}
+                    ]
+                },
+            ]
+        elif 'image' in data_dict:
+            message = [
+                {
+                    "role": "user",
+                    "content": [
+                    {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": get_boxop()},
+                        {"type": "text", "text": f"\nSummarize above image in one word: "}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": f"<emb>."}
+                    ]
+                },
+            ]
+        return message
+
+
+BOX_OP_DICT = {
+    VisMinCLDataset: lambda: "concat",
+    ImgDiffCLDataset: lambda: "concat",
+    DamCLDataset: lambda: "crop", 
+    XHSDataset: lambda: "crop",
+}

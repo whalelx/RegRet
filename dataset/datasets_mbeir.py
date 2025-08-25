@@ -112,10 +112,10 @@ class LazySupervisedDataset(Dataset):
         pos_cand_txt = self.tokenizer(pos_cand_txt, truncation=True, max_length=480, padding=False, return_tensors=None, add_special_tokens=False)
         pos_cand_txt = self.tokenizer.decode(pos_cand_txt['input_ids'])
         
-        query = _prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix, mbeir_entry.get("box",None))
+        query = self._prepare_data_dict(query_txt_with_prompt, query_img_path, self.image_path_prefix, mbeir_entry.get("box",None))
         # query = _prepare_data_dict(query_txt_without_prompt, query_img_path, image_path_prefix)
         instance = {"query": query}
-        pos_cand = _prepare_data_dict(
+        pos_cand = self._prepare_data_dict(
             pos_cand_txt,
             pos_cand.get("img_path", None),
             self.image_path_prefix,
@@ -123,7 +123,13 @@ class LazySupervisedDataset(Dataset):
         )
         instance.update({"pos_cand": pos_cand})
         return instance 
-
+    def _prepare_data_dict(self, txt, img_path, image_path_prefix,box=None):
+        img = _load_and_preprocess_image(img_path, image_path_prefix)
+        if img is None:
+            return {'txt': txt, "box":box}
+        elif txt == '':
+            return {'image': img, "box":box}
+        return {"txt": txt, "image": img, "box":box}
     def __getitem__(self, i):
         instance = self.get_instance(i)
         query_dict = instance['query']
@@ -132,6 +138,12 @@ class LazySupervisedDataset(Dataset):
         cand_message = self.construct_messages(cand_dict)
 
         return query_message, cand_message 
+
+# box op for eval
+# BOXOP = "none"
+# BOXOP = "crop"
+# BOXOP = "draw"
+BOXOP = "concat"
 
 class QueryDataset(Dataset):
     """Dataset for supervised fine-tuning 
@@ -160,7 +172,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": BOXOP},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -191,7 +203,7 @@ class QueryDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": BOXOP},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -265,7 +277,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": BOXOP},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -296,7 +308,7 @@ class CandidateDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op": BOXOP},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -348,7 +360,7 @@ class CandidateDataset(Dataset):
 
 def _load_data(data_path):
     """Validate and load data."""
-    assert os.path.exists(data_path), f"Data Path {data_path} does not exist"
+    # assert os.path.exists(data_path), f"Data Path {data_path} does not exist"
     assert data_path.endswith(".jsonl"), f"Data Path {data_path} is not a jsonl file"
     data_entries = _load_data_jsonl(data_path)
     return data_entries
@@ -408,7 +420,7 @@ def _load_and_preprocess_image(query_img_path, image_path_prefix):
     if not query_img_path:
         return None
     full_query_img_path = os.path.join(image_path_prefix, query_img_path)
-    assert os.path.exists(full_query_img_path), f"Image Path {full_query_img_path} does not exist"
+    # assert os.path.exists(full_query_img_path), f"Image Path {full_query_img_path} does not exist"
     return full_query_img_path
 
 def _prepare_data_dict(txt, img_path, image_path_prefix,box=None):

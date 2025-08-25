@@ -221,7 +221,7 @@ def main():
                        help="Bounding box，格式: 'x1,y1,x2,y2' 例如: '100,100,300,300'")
     parser.add_argument("--query", type=str, default="请详细描述这个区域的内容", 
                        help="查询文本")
-    parser.add_argument("--server", type=str, default="http://localhost:8000/chat/completions", 
+    parser.add_argument("--server", type=str, default="http://localhost:8000", 
                        help="DAM服务器地址")
     parser.add_argument("--model", type=str, default="describe_anything_model", 
                        help="模型名称")
@@ -264,3 +264,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # python dataset/xhs_datatools/dam_client.py --box "0.50237, 0.2811, 0.99541, 0.87666" --image "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/goods_data/from_20250401_to_20250407/images/2emmkfymylq6sq6gayvwg_notes_pre_post_1040g3k831cc22qoe0c305p2vo4mk5815dgogjp0.jpg" --query "What is the background's color on the left part of the region?"  
+    # Answer:The background on the left part of the image is black.
+    # python dataset/xhs_datatools/dam_client.py --box "0.50237, 0.2811, 0.99541, 0.87666" --image "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/goods_data/from_20250401_to_20250407/images/2emmkfymylq6sq6gayvwg_notes_pre_post_1040g3k831cc22qoe0c305p2vo4mk5815dgogjp0.jpg" --query "How many people are there in the image" 
+    # Answer: There is one people in the image.(但是如果我问in total， 就会说两个)
+    # python dataset/xhs_datatools/dam_client.py --box "0.23, 0.42, 0.73, 0.71" --image "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/goods_data/from_20250401_to_20250407/images/2emnk2bvvutyhcztn864g_active_search_1040g0mg31fs20v6rge5g5nddhh908p0g43hk6jo.jpg" --query "What is the cartoon charactor on the right of the region, pasted on the wall"
+    # A cartoon character with a brown crossbody bag, wearing a white long-sleeved shirt with a round neckline.
+    # python dataset/xhs_datatools/dam_client.py --box "0.23, 0.42, 0.73, 0.71" --image "/mnt/tidal-alsh01/dataset/mmeb/xhs_data/goods_data/from_20250401_to_20250407/images/2emnk2bvvutyhcztn864g_active_search_1040g0mg31fs20v6rge5g5nddhh908p0g43hk6jo.jpg" --query "What is on the right of the region? Describe that in detail"
+    # The cartoon character on the right of the image is a red, cartoonish face with large, round eyes and a small, smiling mouth.
