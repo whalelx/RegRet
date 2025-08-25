@@ -78,5 +78,4 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
             labels=labels,
             has_hard_negative=has_hard_negative,
             id_dict=id_dict,
-            crop_or_concat_img_inputs=crop_or_concat_img_inputs,
-        )
+        ) | crop_or_concat_img_inputs

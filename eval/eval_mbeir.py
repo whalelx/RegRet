@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F 
 from accelerate import Accelerator
 import accelerate
+from loaders.processor import LemuirProcessor
 
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
@@ -75,7 +76,7 @@ def eval(args):
     )
 
     # processor is not changed so we still load from the original model repo
-    processor = AutoProcessor.from_pretrained(original_model_id)
+    processor = LemuirProcessor.from_pretrained(original_model_id)
 
     tokenizer = processor.tokenizer 
     tokenizer.padding_side = 'left'

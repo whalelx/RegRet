@@ -18,25 +18,22 @@ class MbeirQueryDataCollator(BaseDataCollator):
             new_messages.append(item[0])
             qids.append(item[1])
 
-        image_nofocal, image_focal_full, image_focal_crop, resort_id = process_vision_info_with_focal(new_messages, box_op="crop")
+        image_inputs, id_dict = process_vision_info_with_focal(new_messages, box_op="crop")
         video_inputs = None
-        image_inputs = image_nofocal + image_focal_crop
 
         texts = [
             self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
             for msg in new_messages
         ]
 
-        text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
-        if not text_only:
-            texts = [texts[i] for i in resort_id]
-
-        inputs = self.processor(
+        inputs, crop_or_concat_img_inputs = self.processor(
             text=texts,
             images=image_inputs,
             videos=video_inputs,
             padding=True,
             return_tensors="pt",
+            id_dict=id_dict,
+            replace_two_imgs=set(id_dict.multi_img_texts)
         )
 
         input_ids = inputs['input_ids']
@@ -46,65 +43,30 @@ class MbeirQueryDataCollator(BaseDataCollator):
         if 'attention_mask' in inputs:
             attention_mask = inputs['attention_mask']
         else:
-            attention_mask = None 
-        if 'pixel_values' in inputs:
-            pixel_values = inputs['pixel_values']
-        else:
-            pixel_values = None 
+            attention_mask = None
+
+        # if 'pixel_values' in inputs:
+        #     pixel_values = inputs['pixel_values']
+        # else:
+        pixel_values = None
+
         if 'image_grid_thw' in inputs:
             image_grid_thw = inputs['image_grid_thw']
         else:
-            image_grid_thw = None 
-        
+            image_grid_thw = None
+
         has_hard_negative = False 
-
-        if text_only:
-            return dict(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                pixel_values=None,
-                image_grid_thw=None,
-                labels=labels,
-                has_hard_negative=has_hard_negative,
-                qids=qids,
-                focal_pixel_values=None,
-                focal_image_grid_thw=None,
-                focal_image_ids=None,
-                real_image_grid_thw=None,
-            )
-
-        prefix_img_nums = len(image_nofocal)
-        prefix_token_length = image_grid_thw[:prefix_img_nums].prod(1).sum().item()
-        # pixel values and image_grithw 真实可用的东西
-
-        focal_crop_pixel_values = pixel_values[prefix_token_length:]
-        focal_crop_grid_thw = image_grid_thw[prefix_img_nums:]
-
-        nofocal_full_pixel_values = pixel_values[:prefix_token_length]
-        nofocal_full_grid_thw = image_grid_thw[:prefix_img_nums]
-
-        focal_inputs = self.processor.image_processor(
-            images=image_focal_full,
-            return_tensors="pt",
-        )
-        focal_full_pixel_values =  focal_inputs.pixel_values
-        focal_full_grid_thw = focal_inputs.image_grid_thw.to(torch.int64)
-
-        focal_image_ids = torch.arange(prefix_img_nums, prefix_img_nums + len(image_focal_full))
 
         return dict(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            pixel_values=torch.cat([nofocal_full_pixel_values, focal_full_pixel_values], dim=0),
-            image_grid_thw=torch.cat([nofocal_full_grid_thw, focal_full_grid_thw], dim=0),
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
             labels=labels,
             has_hard_negative=has_hard_negative,
             qids=qids,
-            focal_pixel_values=focal_crop_pixel_values,
-            focal_image_grid_thw=focal_crop_grid_thw,
-            focal_image_ids=focal_image_ids,
-            real_image_grid_thw=image_grid_thw,
-        )
+            id_dict=id_dict,
+        ) | crop_or_concat_img_inputs
 
 class MbeirCandidateDataCollator(BaseDataCollator):
     @property
@@ -120,33 +82,22 @@ class MbeirCandidateDataCollator(BaseDataCollator):
             new_messages.append(item[0])
             dids.append(item[1])
 
-        image_nofocal, image_focal_full, image_focal_crop, resort_id = process_vision_info_with_focal(new_messages, box_op="crop")
+        image_inputs, id_dict = process_vision_info_with_focal(new_messages, box_op="crop")
         video_inputs = None
-        image_inputs = image_nofocal + image_focal_crop
 
         texts = [
             self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
             for msg in new_messages
         ]
-        text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
-        if not text_only:
-            texts = [texts[i] for i in resort_id]
 
-        # inputs = self.processor(
-        #     text=texts,
-        #     images=image_inputs,
-        #     videos=video_inputs,
-        #     padding=True,
-        #     return_tensors="pt",
-        # )
-        inputs = self.processor(
+        inputs, crop_or_concat_img_inputs = self.processor(
             text=texts,
             images=image_inputs,
             videos=video_inputs,
-            padding='longest',
-            truncation=True,
-            max_length=1024,
+            padding=True,
             return_tensors="pt",
+            id_dict=id_dict,
+            replace_two_imgs=set(id_dict.multi_img_texts)
         )
 
         input_ids = inputs['input_ids']
@@ -156,60 +107,27 @@ class MbeirCandidateDataCollator(BaseDataCollator):
         if 'attention_mask' in inputs:
             attention_mask = inputs['attention_mask']
         else:
-            attention_mask = None 
-        if 'pixel_values' in inputs:
-            pixel_values = inputs['pixel_values']
-        else:
-            pixel_values = None 
+            attention_mask = None
+
+        # if 'pixel_values' in inputs:
+        #     pixel_values = inputs['pixel_values']
+        # else:
+        pixel_values = None
+
         if 'image_grid_thw' in inputs:
             image_grid_thw = inputs['image_grid_thw']
         else:
-            image_grid_thw = None 
-        
-        has_hard_negative = False
-        if text_only:
-            return dict(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                pixel_values=None,
-                image_grid_thw=None,
-                labels=labels,
-                has_hard_negative=has_hard_negative,
-                dids=dids,
-                focal_pixel_values=None,
-                focal_image_grid_thw=None,
-                focal_image_ids=None,
-                real_image_grid_thw=None,
-            )
-        prefix_img_nums = len(image_nofocal)
-        prefix_token_length = image_grid_thw[:prefix_img_nums].prod(1).sum().item()
-        # pixel values and image_grithw 真实可用的东西
+            image_grid_thw = None
 
-        focal_crop_pixel_values = pixel_values[prefix_token_length:]
-        focal_crop_grid_thw = image_grid_thw[prefix_img_nums:]
-
-        nofocal_full_pixel_values = pixel_values[:prefix_token_length]
-        nofocal_full_grid_thw = image_grid_thw[:prefix_img_nums]
-
-        focal_inputs = self.processor.image_processor(
-            images=image_focal_full,
-            return_tensors="pt",
-        )
-        focal_full_pixel_values =  focal_inputs.pixel_values
-        focal_full_grid_thw = focal_inputs.image_grid_thw.to(torch.int64)
-
-        focal_image_ids = torch.arange(prefix_img_nums, prefix_img_nums + len(image_focal_full))
+        has_hard_negative = False 
 
         return dict(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            pixel_values=torch.cat([nofocal_full_pixel_values, focal_full_pixel_values], dim=0),
-            image_grid_thw=torch.cat([nofocal_full_grid_thw, focal_full_grid_thw], dim=0),
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
             labels=labels,
             has_hard_negative=has_hard_negative,
             dids=dids,
-            focal_pixel_values=focal_crop_pixel_values,
-            focal_image_grid_thw=focal_crop_grid_thw,
-            focal_image_ids=focal_image_ids,
-            real_image_grid_thw=image_grid_thw,
-        )
+            id_dict=id_dict,
+        ) | crop_or_concat_img_inputs

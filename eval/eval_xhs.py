@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 import accelerate
 from tqdm import tqdm
+from loaders.processor import LemuirProcessor
 
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
@@ -101,7 +102,7 @@ def eval(args):
     )
 
     # processor is not changed so we still load from the original model repo
-    processor = AutoProcessor.from_pretrained(original_model_id)
+    processor = LemuirProcessor.from_pretrained(original_model_id)
 
     tokenizer = processor.tokenizer 
     tokenizer.padding_side = 'left'
@@ -110,9 +111,8 @@ def eval(args):
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        # assert len(emb_tokens) == num_new_tokens
-
-        # model.resize_token_embeddings(len(tokenizer))
+        if len(emb_tokens) == num_new_tokens:
+            model.resize_token_embeddings(len(tokenizer))
 
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
@@ -137,8 +137,8 @@ def eval(args):
     query_data_collator = MbeirQueryDataCollator(tokenizer=tokenizer, processor=processor)
     cand_data_collator = MbeirCandidateDataCollator(tokenizer=tokenizer, processor=processor)
     
-    query_dataloader = DataLoader(query_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=query_data_collator)
-    candidate_dataloader = DataLoader(cand_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
+    query_dataloader = DataLoader(query_dataset, batch_size=96, num_workers=4, shuffle=False, collate_fn=query_data_collator)
+    candidate_dataloader = DataLoader(cand_dataset, batch_size=96, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
 
     accelerator = Accelerator(mixed_precision='bf16')
     device = accelerator.device 
@@ -221,7 +221,6 @@ def eval(args):
         #     json.dump(query_ids, f, indent=2)
         # with open(f"{save_dir_name}/{save_name}_candidate_ids.json", 'w') as f:
         #     json.dump(candidate_ids, f, indent=2)
-        
 
         qrel, qid_to_taskid = load_qrel(args.qrels_path)
 

@@ -114,7 +114,7 @@ class DAMDataset(Dataset):
             {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": image, "box": box},
+                    {"type": "image", "image": image, "box": box, "box_op": "crop"},
                     {"type": "text", "text": f"\n{self.get_prompt()}"}
                 ]
             },

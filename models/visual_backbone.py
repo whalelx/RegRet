@@ -134,15 +134,16 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
             output_hidden_states=enc_dec_arch
         )
         full_image_feature = full_image_feature_list[-1] if enc_dec_arch else full_image_feature_list
-        
-        if grid_thw.prod(1).sum() == justfull_image_num:
+
+        if len(grid_thw) == justfull_image_num:
             return self.patch_merge(full_image_feature)
 
         crop_pixel_values = torch.cat([group_imgs[k]['pixel_values'] for k in ("concat_crop", "crop_crop")], dim=0)
         crop_grid_thw = torch.cat([group_imgs[k]['image_grid_thw'] for k in ("concat_crop", "crop_crop")], dim=0)
 
         context_thw = full_grid_thw[justfull_image_num:, :]
-        justfull_token_nums = (grid_thw.prod(1).sum() - context_thw.prod(1).sum()).item()
+
+        justfull_token_nums = group_imgs["justfull"]['image_grid_thw'].prod(1).sum().item() if justfull_image_num > 0 else 0
 
         if enc_dec_arch:
             context_feature = [f[justfull_token_nums:] for f in full_image_feature_list]
@@ -157,26 +158,28 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
         )
         cimage_features = self.ctx_merger(cimage_features)
 
-        if grid_thw.prod(1).sum() == len(id_dict.crop_crop):
+        if len(grid_thw) == len(id_dict.crop_crop):
             return cimage_features
         
         crop_full_image_num = len(id_dict.crop_full)
-        crop_full_token_num = group_imgs["crop_full"]["image_grid_thw"].prod(1).sum().item()
+        crop_full_token_num = group_imgs["crop_full"]["image_grid_thw"].prod(1).sum().item() if crop_full_image_num > 0 else 0
         
         all_feature = torch.cat([
-            self.patch_merge(full_image_feature[:-crop_full_token_num]),
+            self.patch_merge(full_image_feature[:len(full_image_feature)-crop_full_token_num]),
             cimage_features,
         ], dim=0)
 
         all_grid_thw = torch.cat([
-            full_grid_thw[:-crop_full_image_num],
+            full_grid_thw[:len(full_grid_thw)-crop_full_image_num],
             crop_grid_thw,
         ], dim=0)
-        
-        shuffled_image_indices = torch.tensor(id_dict.justfull + id_dict.crop_crop + id_dict.concat_crop + id_dict.concat_full, device=all_feature.device)
+
+        split_sizes = (all_grid_thw.prod(dim=1) // (self.config.spatial_merge_size ** 2)).tolist()
+
+        # the id_dict... order is important!
+        shuffled_image_indices = torch.tensor(id_dict.justfull + id_dict.concat_full + id_dict.concat_crop + id_dict.crop_crop, device=all_feature.device)
         sort_indices = torch.argsort(shuffled_image_indices)
 
-        split_sizes = all_grid_thw.prod(dim=1).tolist()
         feature_blocks_list = torch.split(all_feature, split_sizes, dim=0)
         
         all_feature = torch.cat([feature_blocks_list[i] for i in sort_indices], dim=0)

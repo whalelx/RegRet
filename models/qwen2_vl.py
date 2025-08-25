@@ -151,9 +151,41 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
         qids=None,
         dids=None,
         ids=None,
+        # our dataflows
         id_dict=None,
-        crop_or_concat_img_inputs=None,
+        justfull_pixel_values=None,
+        justfull_image_grid_thw=None,
+        crop_crop_pixel_values=None,
+        crop_crop_image_grid_thw=None,
+        crop_full_pixel_values=None,
+        crop_full_image_grid_thw=None,
+        concat_crop_pixel_values=None,
+        concat_crop_image_grid_thw=None,
+        concat_full_pixel_values=None,
+        concat_full_image_grid_thw=None
     ):
+        group_imgs = {
+            'justfull': {
+                'pixel_values': justfull_pixel_values,
+                'image_grid_thw': justfull_image_grid_thw
+            },
+            'crop_crop': {
+                'pixel_values': crop_crop_pixel_values,
+                'image_grid_thw': crop_crop_image_grid_thw
+            },
+            'crop_full': {
+                'pixel_values': crop_full_pixel_values,
+                'image_grid_thw': crop_full_image_grid_thw
+            },
+            'concat_crop': {
+                'pixel_values': concat_crop_pixel_values,
+                'image_grid_thw': concat_crop_image_grid_thw
+            },
+            'concat_full': {
+                'pixel_values': concat_full_pixel_values,
+                'image_grid_thw': concat_full_image_grid_thw
+            }
+        }
         if not self.flag_set_causal and self.config.nocausal_attn:
             for layer in self.model.layers:
                 layer.self_attn.is_causal = False
@@ -167,11 +199,14 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
 
         if inputs_embeds is None:
             inputs_embeds = self.model.embed_tokens(input_ids)
-            if pixel_values is not None or crop_or_concat_img_inputs is not None:
-                # pixel_values = pixel_values.type(self.visual.dtype)
-                for key in crop_or_concat_img_inputs:
-                    crop_or_concat_img_inputs[key]['pixel_values'] = crop_or_concat_img_inputs[key]['pixel_values'].type(self.visual.dtype)
-                image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw, group_imgs=crop_or_concat_img_inputs, id_dict=id_dict)
+            use_image = False
+            for k in group_imgs:
+                if (sub_pixel_values := group_imgs[k]['pixel_values']) is not None and len(sub_pixel_values) > 0:
+                    group_imgs[k]['pixel_values'] = sub_pixel_values.type(self.visual.dtype)
+                    use_image = True
+            if pixel_values is not None or use_image:
+                pixel_values = pixel_values.type(self.visual.dtype) if pixel_values is not None else None
+                image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw, group_imgs=group_imgs, id_dict=id_dict)
                 n_image_tokens = (input_ids == self.config.image_token_id).sum().item()
                 n_image_features = image_embeds.shape[0]
                 if n_image_tokens != n_image_features:
@@ -286,7 +321,6 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
                 raise Exception("do not support yet!")
                 embed1, embed2, embed3 = embed_features[:contrastive_batch_size], embed_features[contrastive_batch_size:2*contrastive_batch_size], embed_features[2*contrastive_batch_size:]
             else:
-                embed_features = embed_features[embed_features.device]
                 embed1, embed2 = embed_features[:contrastive_batch_size], embed_features[contrastive_batch_size:]
 
             loss_fct = nn.CrossEntropyLoss()

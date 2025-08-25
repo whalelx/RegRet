@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.processing_utils import ImagesKwargs, ProcessingKwargs
-
+import torch
 
 class Qwen2VLImagesKwargs(ImagesKwargs):
     min_pixels: Optional[int]
@@ -44,7 +44,7 @@ class LemuirProcessor(Qwen2VLProcessor):
         if images is not None:            
             crop_or_concat_img_inputs = self.get_images_by_group(images, id_dict, output_kwargs)
             image_inputs = self.image_processor(
-                images=self.get_images(images, id_dict, output_kwargs), 
+                images=self.get_images(images, id_dict), 
                 videos=None, 
                 **output_kwargs["images_kwargs"]
             )
@@ -71,13 +71,14 @@ class LemuirProcessor(Qwen2VLProcessor):
                 while self.image_token in text[i]:
                     if i in replace_two_imgs:
                         text[i] = text[i].replace(
-                            self.image_token, "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length) + "<|vision_end|><|vision_start|>" + "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length), 1
+                            self.image_token, "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length) + "<|vision_end|><|vision_start|>" + "<|placeholder|>" * (image_grid_thw[index+1].prod() // merge_length), 1
                         )
+                        index += 2
                     else:
                         text[i] = text[i].replace(
                             self.image_token, "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length), 1
                         )
-                    index += 1
+                        index += 1
                 text[i] = text[i].replace("<|placeholder|>", self.image_token)
 
         if video_grid_thw is not None:
@@ -101,8 +102,10 @@ class LemuirProcessor(Qwen2VLProcessor):
         for key in ("justfull", "crop_crop", "crop_full", "concat_crop", "concat_full"):
             ids = getattr(id_dict, key)
             cur_images = [images[i] for i in ids]
-            inputs[key] = self.image_processor(images=cur_images, videos=None, **output_kwargs["images_kwargs"])
-        
+            tmp = self.image_processor(images=cur_images, videos=None, **output_kwargs["images_kwargs"])
+            inputs[key+"_pixel_values"] = tmp.pixel_values
+            # HACK TODO why image grid becomes float if it is not converted here?
+            inputs[key+"_image_grid_thw"] = tmp.image_grid_thw.to(torch.int64) # HACK
         return BatchFeature(inputs)
     
     def get_images(self, images, id_dict):

@@ -1,11 +1,11 @@
 from typing import Tuple
 
-from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoProcessor, AutoModelForCausalLM
 
 from . import register_loader
 from .base import BaseModelLoader
 from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
-from models.qwen2_vl_finetune import Qwen2VLRetFinetuneForConditionalGeneration
+from .processor import LemuirProcessor
 
 
 @register_loader("qwen2-vl-7b")
@@ -22,7 +22,7 @@ class Qwen2VL7BModelLoader(BaseModelLoader):
                 **self.loading_kwargs,
             ) 
 
-        processor = AutoProcessor.from_pretrained(self.model_local_path)
+        processor = LemuirProcessor.from_pretrained(self.model_local_path)
         tokenizer = processor.tokenizer 
 
         self.add_embed_token(tokenizer, model)
