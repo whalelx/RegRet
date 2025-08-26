@@ -1,4 +1,4 @@
-import json
+import jsonlines
 from typing import Dict, List
 from torch.utils.data import Dataset
 import numpy as np
@@ -17,9 +17,12 @@ class PAMDataset(Dataset):
         inference: bool = False
     ) -> None:
         super(PAMDataset, self).__init__()
-        with open(f"{data_path}", 'r') as f:
-            self.dataset = json.load(f)
         
+        self.dataset = []
+        with jsonlines.open(data_path, "r") as reader:
+            for item in reader:
+                self.dataset.append(item)
+    
         self.length = len(self.dataset)
         self.mode = mode
         self.max_length = max_length
@@ -45,9 +48,14 @@ class PAMDataset(Dataset):
         image_path = os.path.join(self.image_prefix, item['image'])
         image = Image.open(image_path)
         image = image.convert("RGB")
+
+        b = item['bbox']
+        x1, y1 = int(b[0]), int(b[1])
+        x2, y2 = int(b[0] + b[2]), int(b[1] + b[3])
+        
         w, h = image.size
-        box = item['bbox']
-        box = [box[0]/w, box[1]/h, box[2]/w, box[3]/h]
+        box = [x1/w, y1/h, x2/w, y2/h]
+
         text = item["conversations"][1]['value'].strip()
 
         if len(text) > self.text_truncate_length:
@@ -57,7 +65,7 @@ class PAMDataset(Dataset):
             {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": image, "box": box},
+                    {"type": "image", "image": image, "box": box, "box_op": "crop"},
                     {"type": "text", "text": f"\n{self.get_prompt()}"}
                 ]
             },
@@ -80,3 +88,10 @@ class PAMDataset(Dataset):
     def __getitem__(self, i) -> Dict[str, List]: 
         j = i * 2 + 1
         return self.get_instance(i), self.get_instance(j)
+
+if __name__ == "__main__":
+    pam_dataset = PAMDataset(
+        data_path="/mnt/tidal-alsh01/dataset/mmeb/PAM-data/image-obj-caption/PamCOCO.jsonl",
+        max_length=108000,
+        mode = 'crop',
+    )

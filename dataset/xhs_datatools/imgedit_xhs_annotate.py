@@ -753,7 +753,7 @@ class NewXHSGoodTask7FileExtractor(XHSGoodTask7FileExtractor):
 
 # NOTE! 要把TRAIN 设为True
 generate_mbeir_files(
-    "xhs_data/goods_data/from_20250316_to_20250607/grouped_data.json",
+    "xhs_data/goods_data/from_20250316_to_20250607/v2.json",
     "",
     "M-BEIR",
     dsname="xhsgoodtrain",
@@ -761,7 +761,20 @@ generate_mbeir_files(
     dataset_id="10", task_id="7",
     root_fs=ROOT_FS,
     image_subdir="xhs_data/goods_data/from_20250316_to_20250607/images",
-    samples_for_test_up=12000, samples_for_test_low=0, top_k_poscand=10,
+    samples_for_test_up=3500, samples_for_test_low=0, top_k_poscand=10,
+    skip_samples=0
+)
+
+generate_mbeir_files(
+    "xhs_data/goods_data/from_20250316_to_20250607/v4.json",
+    "",
+    "M-BEIR",
+    dsname="xhsgoodtrainv4",
+    cls = NewXHSGoodTask7FileExtractor,
+    dataset_id="10", task_id="7",
+    root_fs=ROOT_FS,
+    image_subdir="xhs_data/goods_data/from_20250316_to_20250607/images",
+    samples_for_test_up=9000, samples_for_test_low=0, top_k_poscand=10,
     skip_samples=0
 )
 
