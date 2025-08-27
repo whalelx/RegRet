@@ -392,6 +392,8 @@ class XHSGoodTask7FileExtractor(XHSGoodsFileExtractor):
         
         with open(samples_path, 'r', encoding='utf-8') as f:
             queries_input = json.load(f)
+
+        print("Load Done.")
         CONCUR=100
         
         # Create semaphore to limit concurrency to 10
@@ -405,7 +407,7 @@ class XHSGoodTask7FileExtractor(XHSGoodsFileExtractor):
             # Skip samples based on SKIP_SAMPLES
             if counter < self.SKIP_SAMPLES:
                 continue
-                
+
             # Apply sampling limits using instance variables
             if valid_query_count >= self.SAMPLES_FOR_TEST_UP:
                 break
@@ -775,6 +777,19 @@ generate_mbeir_files(
     root_fs=ROOT_FS,
     image_subdir="xhs_data/goods_data/from_20250316_to_20250607/images",
     samples_for_test_up=9000, samples_for_test_low=0, top_k_poscand=10,
+    skip_samples=0
+)
+
+generate_mbeir_files(
+    "xhs_data/goods_data/from_20250316_to_20250607/doubaov4.json",
+    "",
+    "M-BEIR",
+    dsname="xhsgoodtraindoubaov4",
+    cls = NewXHSGoodTask7FileExtractor,
+    dataset_id="10", task_id="7",
+    root_fs=ROOT_FS,
+    image_subdir="xhs_data/goods_data/from_20250316_to_20250607/images",
+    samples_for_test_up=10000, samples_for_test_low=0, top_k_poscand=10,
     skip_samples=0
 )
 

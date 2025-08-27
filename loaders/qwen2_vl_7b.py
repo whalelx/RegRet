@@ -5,6 +5,7 @@ from transformers import AutoTokenizer, AutoProcessor, AutoModelForCausalLM
 from . import register_loader
 from .base import BaseModelLoader
 from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
+from models.qwen2_vl_finetune import Qwen2VLRetFinetuneForConditionalGeneration
 from .processor import LemuirProcessor
 
 

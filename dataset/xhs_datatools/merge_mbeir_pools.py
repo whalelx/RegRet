@@ -163,6 +163,14 @@ if __name__ == "__main__":
     qrels2 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/qrels/train/mbeir_xhsgoodtrainv4_task7_train_qrels.txt"
     query2 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/train/mbeir_xhsgoodtrainv4_task7_train.jsonl"
 
+    # query1 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/train/mbeir_xhsgood_task7_merge_train.jsonl"
+    # cand1 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/cand_pool/local/mbeir_xhsgood_task7_merge_cand_pool.jsonl"
+    # qrels1 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/qrels/train/mbeir_xhsgood_task7_merge_train_qrels.txt"
+
+    # cand2 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/cand_pool/local/mbeir_xhsgoodtraindoubaov4_task7_cand_pool.jsonl"
+    # qrels2 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/qrels/train/mbeir_xhsgoodtraindoubaov4_task7_train_qrels.txt"
+    # query2 = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/train/mbeir_xhsgoodtraindoubaov4_task7_train.jsonl"
+
     outquery = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/train/mbeir_xhsgood_task7_merge_train.jsonl"
     outcand = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/cand_pool/local/mbeir_xhsgood_task7_merge_cand_pool.jsonl"
     outqrels = "/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/qrels/train/mbeir_xhsgood_task7_merge_train_qrels.txt"

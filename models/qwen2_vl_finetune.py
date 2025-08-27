@@ -26,65 +26,60 @@ class Similarity(nn.Module):
 
 class Qwen2VLRetFinetuneForConditionalGeneration(Qwen2VLForConditionalGeneration):
 
-    def get_features(
+    def build_batch_group_imgs(
         self,
-        input_ids: torch.LongTensor = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_ids: Optional[torch.LongTensor] = None,
-        past_key_values: Optional[List[torch.FloatTensor]] = None,
-        inputs_embeds: Optional[torch.FloatTensor] = None,
-        labels: Optional[torch.LongTensor] = None,
-        use_cache: Optional[bool] = None,
-        output_attentions: Optional[bool] = None,
-        output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
-        pixel_values: Optional[torch.Tensor] = None,
-        pixel_values_videos: Optional[torch.FloatTensor] = None,
-        image_grid_thw: Optional[torch.LongTensor] = None,
-        video_grid_thw: Optional[torch.LongTensor] = None,
-        rope_deltas: Optional[torch.LongTensor] = None,
+        cur_img_start_idx,
+        cur_img_end_idx,
+        id_dict=None,
+        justfull_pixel_values=None,
+        justfull_image_grid_thw=None,
+        crop_crop_pixel_values=None,
+        crop_crop_image_grid_thw=None,
+        crop_full_pixel_values=None,
+        crop_full_image_grid_thw=None,
+        concat_crop_pixel_values=None,
+        concat_crop_image_grid_thw=None,
+        concat_full_pixel_values=None,
+        concat_full_image_grid_thw=None
     ):
-        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
-        output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
-        )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        group_imgs = {}
+        batch_id_dict = {}
+        use_image = False
 
-        if inputs_embeds is None:
-            inputs_embeds = self.model.embed_tokens(input_ids)
-            if pixel_values is not None:
-                pixel_values = pixel_values.type(self.visual.get_dtype())
-                image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw).to(inputs_embeds.device)
-                image_mask = input_ids == self.config.image_token_id
-                if self.training:
-                    inputs_embeds = inputs_embeds.clone()
-                inputs_embeds[image_mask] = image_embeds
-            if pixel_values_videos is not None:
-                pixel_values_videos = pixel_values_videos.type(self.visual.get_dtype())
-                video_embeds = self.visual(pixel_values_videos, grid_thw=video_grid_thw).to(inputs_embeds.device)
-                video_mask = input_ids == self.config.video_token_id
-                inputs_embeds[video_mask] = video_embeds
-            if attention_mask is not None:
-                attention_mask = attention_mask.to(inputs_embeds.device)
-
-        outputs = self.model(
-            input_ids=None,
-            position_ids=position_ids,
-            attention_mask=attention_mask,
-            past_key_values=past_key_values,
-            inputs_embeds=inputs_embeds,
-            use_cache=use_cache,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
-
-        hidden_states = outputs[0]
-        embed_index = self.config.emb_token_ids[0]
-        embed_indices = torch.argmax((labels == embed_index).int(), dim=1) 
-        embed_features = hidden_states[torch.arange(len(embed_indices)), embed_indices - 1] # (batch_size, embed_dim)
-        return embed_features 
-    
+        for key in ("justfull", "crop_crop", "crop_full", "concat_crop", "concat_full"):
+            pixel_values = eval(key+"_pixel_values")
+            image_grid_thw = eval(key+"_image_grid_thw")
+            batch_id_dict[key] = []
+            if len(image_grid_thw) == 0:
+                group_imgs[key] = {
+                    'pixel_values': pixel_values,
+                    'image_grid_thw': pixel_values
+                }
+            else:
+                ids = [ i for i in getattr(id_dict, key) if i >= cur_img_start_idx and i < cur_img_end_idx ]
+                if (used_img_nums:=len(ids)) == 0:
+                    group_imgs[key] = {
+                        'pixel_values': torch.tensor([], device=pixel_values.device),
+                        'image_grid_thw': torch.tensor([], device=image_grid_thw.device)
+                    }
+                elif used_img_nums == len(getattr(id_dict, key)):
+                    group_imgs[key] = {
+                        'pixel_values': pixel_values.type(self.visual.dtype),
+                        'image_grid_thw': image_grid_thw
+                    }
+                    use_image = True
+                    batch_id_dict[key] = ids
+                else:
+                    used_image_thw = image_grid_thw[:used_img_nums]
+                    used_image_tokens = used_image_thw.prod(1).sum().item()
+                    group_imgs[key] = {
+                        'pixel_values': pixel_values[:used_image_tokens].type(self.visual.dtype),
+                        'image_grid_thw': used_image_thw
+                    }
+                    use_image = True
+                    batch_id_dict[key] = ids
+        
+        return group_imgs, type(id_dict)(batch_id_dict), use_image
 
     def forward(
         self,
@@ -107,47 +102,26 @@ class Qwen2VLRetFinetuneForConditionalGeneration(Qwen2VLForConditionalGeneration
         has_hard_negative=False,
         qids=None,
         dids=None,
-        ids=None 
+        ids=None,
+        # our dataflows
+        id_dict=None,
+        justfull_pixel_values=None,
+        justfull_image_grid_thw=None,
+        crop_crop_pixel_values=None,
+        crop_crop_image_grid_thw=None,
+        crop_full_pixel_values=None,
+        crop_full_image_grid_thw=None,
+        concat_crop_pixel_values=None,
+        concat_crop_image_grid_thw=None,
+        concat_full_pixel_values=None,
+        concat_full_image_grid_thw=None
     ) -> Union[Tuple, Qwen2VLCausalLMOutputWithPast]:
-        r"""
-        Args:
-            labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
-                Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
-                config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
-                (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
 
-        Returns:
+        if not self.flag_set_causal and self.config.nocausal_attn:
+            for layer in self.model.layers:
+                layer.self_attn.is_causal = False
+            self.flag_set_causal = True
 
-        Example:
-
-        ```python
-        >>> from PIL import Image
-        >>> import requests
-        >>> from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
-
-        >>> model = Qwen2VLForConditionalGeneration.from_pretrained("Qwen/Qwen2-VL-7B-Instruct")
-        >>> processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-7B-Instruct")
-
-        >>> messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": "What is shown in this image?"},
-                ],
-            },
-        ]
-        >>> url = "https://www.ilankelman.org/stopsigns/australia.jpg"
-        >>> image = Image.open(requests.get(url, stream=True).raw)
-
-        >>> text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        >>> inputs = processor(text=[text], images=[image], vision_infos=[vision_infos])
-
-        >>> # Generate
-        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
-        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-        "The image shows a street scene with a red stop sign in the foreground. In the background, there is a large red gate with Chinese characters ..."
-        ```"""
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -155,11 +129,11 @@ class Qwen2VLRetFinetuneForConditionalGeneration(Qwen2VLForConditionalGeneration
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # set mini_batch to 32
-        mini_batch_size = 32 
+        mini_batch_size = 32
         input_ids_list = torch.split(input_ids, mini_batch_size)
         attention_mask_list = torch.split(attention_mask, mini_batch_size)
         if image_grid_thw is not None:
-            cumsum_pixel_values = torch.cumsum(image_grid_thw[:, 1] * image_grid_thw[:, 2], dim=-1) 
+            cumsum_pixel_values = torch.cumsum(image_grid_thw[:, 1] * image_grid_thw[:, 2], dim=-1)
             zero_tensor = torch.tensor([0], device=cumsum_pixel_values.device) # be convinient for extracting batch_pixel_values
             cumsum_pixel_values = torch.cat((zero_tensor, cumsum_pixel_values))
             image_nums = 0
@@ -169,13 +143,26 @@ class Qwen2VLRetFinetuneForConditionalGeneration(Qwen2VLForConditionalGeneration
         for i in range(len(input_ids_list)):
             if inputs_embeds is None:
                 batch_inputs_embeds = self.model.embed_tokens(input_ids_list[i])
-                if pixel_values is not None:
-                    image_mask = input_ids_list[i] == self.config.image_token_id
-                    current_image_num = torch.sum(torch.any(image_mask, dim=-1)).cpu().item()
+                image_mask = input_ids_list[i] == self.config.image_token_id
+                current_image_num = torch.sum(torch.any(image_mask, dim=-1)).cpu().item()
+                batch_group_imgs, batch_id_dict, use_image = self.build_batch_group_imgs(
+                    image_nums,
+                    image_nums + current_image_num,
+                    id_dict,
+                    justfull_pixel_values,
+                    justfull_image_grid_thw,
+                    crop_crop_pixel_values,
+                    crop_crop_image_grid_thw,
+                    crop_full_pixel_values,
+                    crop_full_image_grid_thw,
+                    concat_crop_pixel_values,
+                    concat_crop_image_grid_thw,
+                    concat_full_pixel_values,
+                    concat_full_image_grid_thw
+                )
+                if pixel_values is not None or use_image:
                     if current_image_num != 0:
-                        batch_pixel_values = pixel_values[cumsum_pixel_values[image_nums] : cumsum_pixel_values[image_nums + current_image_num]]
-                        batch_pixel_values = batch_pixel_values.type(self.visual.get_dtype())
-                        batch_image_embeds = self.visual(batch_pixel_values, grid_thw=image_grid_thw[image_nums:image_nums + current_image_num]).to(batch_inputs_embeds.device)
+                        batch_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw[image_nums:image_nums + current_image_num], group_imgs=batch_group_imgs, id_dict=batch_id_dict)
                         image_nums = image_nums + current_image_num
                         if self.training:
                             batch_inputs_embeds = batch_inputs_embeds.clone()
