@@ -1,7 +1,10 @@
+PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
+NCCL_DEBUG=INFO
 NUM_GPUS=8
-NNODES=1
-NODE_RANK=0 # 1
-MASTER_ADDR="0.0.0.0"
+NNODES=2
+NODE_RANK=${1:-0}
+MASTER_ADDR="10.204.73.49"
+# MASTER_ADDR="0.0.0.0"
 MASTER_PORT=29508
 
 DISTRIBUTED_ARGS="
@@ -11,22 +14,22 @@ DISTRIBUTED_ARGS="
     --master_addr ${MASTER_ADDR} \
     --master_port ${MASTER_PORT}
 "
-# bash scripts/lemuir/finetune.sh qwen2-vl-2b_visdoc_tune ../dam-qwen2/checkpoints/LamRA-Ret-2b-Pretrained-merged/
-# DISTRIBUTED_ARGS="
-#     --nnodes=${NNODES} \
-#     --nproc_per_node ${NUM_GPUS} \
-#     --master_port ${MASTER_PORT}
-# "
 
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=${3:-"qwen2-vl-2b"}
+MODEL_ID=${3:-"qwen2-vl-7b"}
 DATASET_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH=${2:-"../dam-qwen2/checkpoints/LamRA-Ret-2b-Pretrained-merged"}
+
+# MODEL_LOCAL_PATH=${2:-"../dam-qwen2/checkpoints/LamRA-Ret-2b-Pretrained-merged"}
+# MODEL_LOCAL_PATH=${2:-"./tmp_ckpts/Lemuir-Pretrained-merged+cplessvit"}
+MODEL_LOCAL_PATH=${2:-"checkpoints/LamRA-Ret-2b-tune+cp2/"}
+MODEL_LOCAL_PATH="checkpoints/Lemur_7B_Pretrain_585ktxt_enc"
+# MODEL_LOCAL_PATH="./tmp_ckpts/qwen2-vl-2b_DAM_cp_testpam"
+
 
 TRAIN_VISION_ENCODER=False                              
 USE_VISION_LORA=False                                  
@@ -36,17 +39,19 @@ USE_LORA=True
 Q_LORA=False                                           
 LORA_R=128                                                
 LORA_ALPHA=256                                           
-RUN_ID=${1:-qwen2-vl-2b_Lemur-2b_tune}
+# RUN_ID=${1:-qwen2-vl-2b_Lemur-2b_tune}
+RUN_ID=${MODEL_ID}_Lemur_585ktxt_tune_stage2-h20
+ 
 
-DS_STAGE=zero3
-PER_DEVICE_BATCH_SIZE=72
-GRAD_ACCUM=2                                         
+DS_STAGE=zero2
+PER_DEVICE_BATCH_SIZE=60
+GRAD_ACCUM=1                             
 NUM_EPOCHS=1                                         
 
-LR=0.00011
+LR=0.0001
 MODEL_MAX_LEN=1024
 
-shift 3
+shift 1
 torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --model_id $MODEL_ID \
     --query_data_path $QUERY_DATA_PATH \

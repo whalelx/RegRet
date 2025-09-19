@@ -9,6 +9,7 @@ hf_upload_checkpoints/
 zeroshot_rerank_files/
 zeroshot_retrieval_eval_results/
 LamRA_Ret_eval_results/
+*_Ret_eval_results/
 checkpoints/ 
 tmp_ckpts/
 rerank_training_data/

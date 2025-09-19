@@ -5,7 +5,7 @@ import os
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 module_path = os.path.join(current_file_path, "../")
 sys.path.append(module_path)
-from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
+from models.qwen2_vl import Qwen2VLRetForConditionalGeneration, AngleSimilarity
 import torch 
 import argparse
 from dataset.datasets_mbeir import QueryDataset, CandidateDataset
@@ -14,7 +14,6 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F 
 from accelerate import Accelerator
 import accelerate
-from tqdm import tqdm
 from loaders.processor import LemuirProcessor
 
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
@@ -60,36 +59,11 @@ def compute_recall_at_k(relevant_docs, retrieved_indices, k):
 
     # Check if there is an intersection between relevant docs and top k retrieved docs
     # If there is, we return 1, indicating successful retrieval; otherwise, we return 0
-    result = []
-    for x in relevant_docs_set:
-        filtered_top_k = top_k_retrieved_indices_set - (relevant_docs_set - {x})
-        if x in filtered_top_k:
-            result.append(1.0)
-        else:
-            result.append(0.0)
-    return result
+    if relevant_docs_set.intersection(top_k_retrieved_indices_set):
+        return 1.0
+    else:
+        return 0.0
 
-def compute_recall_at_k_rewrite(relevant_docs, retrieved_indices, k):
-
-    if not relevant_docs:
-        return 0.0 # Return 0 if there are no relevant documents
-
-    relevant_docs_set = set(relevant_docs)
-    retrieved_indices_set = set(retrieved_indices)
-
-    result = []
-    for target_doc in relevant_docs_set:
-        other_relevant_docs = relevant_docs_set - {target_doc}
-        num_other_relevant_retrieved = len(retrieved_indices_set.intersection(other_relevant_docs))
-        dynamic_k = k + num_other_relevant_retrieved
-        top_dynamic_k_retrieved_set = set(retrieved_indices[:dynamic_k])
-        
-        if target_doc in top_dynamic_k_retrieved_set:
-            result.append(1.0)
-        else:
-            result.append(0.0)
-            
-    return result
 
 def eval(args):
     original_model_id = args.original_model_id
@@ -106,11 +80,12 @@ def eval(args):
 
     tokenizer = processor.tokenizer 
     tokenizer.padding_side = 'left'
-    # tokenizer.model_max_length = args.model_max_length
+    tokenizer.model_max_length = args.model_max_length
 
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
+        
         if len(emb_tokens) == num_new_tokens:
             model.resize_token_embeddings(len(tokenizer))
 
@@ -118,7 +93,8 @@ def eval(args):
         model.config.emb_token_ids = emb_token_ids
 
     add_embed_token(tokenizer, model)
-    # model.config.nocausal_attn = args.nocausal_attn
+
+    model.config.nocausal_attn = args.nocausal_attn
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 
@@ -137,8 +113,8 @@ def eval(args):
     query_data_collator = MbeirQueryDataCollator(tokenizer=tokenizer, processor=processor)
     cand_data_collator = MbeirCandidateDataCollator(tokenizer=tokenizer, processor=processor)
     
-    query_dataloader = DataLoader(query_dataset, batch_size=96, num_workers=4, shuffle=False, collate_fn=query_data_collator)
-    candidate_dataloader = DataLoader(cand_dataset, batch_size=96, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
+    query_dataloader = DataLoader(query_dataset, batch_size=30, num_workers=4, shuffle=False, collate_fn=query_data_collator)
+    candidate_dataloader = DataLoader(cand_dataset, batch_size=30, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
 
     accelerator = Accelerator(mixed_precision='bf16')
     device = accelerator.device 
@@ -160,6 +136,7 @@ def eval(args):
     candidate_features = []
     candidate_ids = []
 
+    from tqdm import tqdm 
     with torch.no_grad():
         query_dataloader, candidate_dataloader, model = accelerator.prepare(query_dataloader, candidate_dataloader, model)
 
@@ -170,7 +147,8 @@ def eval(args):
             candidate_embed = accelerator.gather_for_metrics(candidate_embed)
             batch_candidate_ids = accelerator.gather_for_metrics(batch_candidate_ids)[:len(candidate_embed)]
             candidate_ids.extend(batch_candidate_ids)
-            candidate_features.append(candidate_embed)
+            # 将candidate embeddings移到CPU以节省GPU内存
+            candidate_features.append(candidate_embed.cpu())
 
         for batch in tqdm(query_dataloader, disable=not is_main_process):
             batch = tensors_to_device(batch, device)
@@ -182,22 +160,35 @@ def eval(args):
             query_features.append(query_embed)
 
     query_features = torch.cat(query_features, dim=0)
-    candidate_features = torch.cat(candidate_features, dim=0)
+    candidate_features = torch.cat(candidate_features, dim=0)  # 这时candidate_features在CPU上
 
     
     if is_main_process:
-        # Adjust the order according to ids 
-        import numpy as np 
+        # Adjust the order according to ids
+        import numpy as np
+
+        # Initialize AngleSimilarity for angle-based similarity calculation
+        angle_sim = AngleSimilarity(temp=1, pooling_strategy='sum')
+
+        # 将candidate_features移到GPU进行计算
+        candidate_features = candidate_features.to(device)
 
         index = []
         scores = []
         for i in range(len(query_features)):
             query_feature = query_features[i:i+1]
-            score = query_feature @ candidate_features.T # (1, num_candidate)
+            if args.use_angle_sim:
+                # Use angle similarity instead of cosine similarity
+                score = angle_sim(query_feature, candidate_features) # (1, num_candidate)
+            else:
+                score = query_feature @ candidate_features.T # (1, num_candidate)
             topk_score, topk_indexes = torch.topk(score, k=50, dim=-1)
             topk_indexes = topk_indexes.squeeze().tolist()
             index.append(topk_indexes)
             scores.append(topk_score.tolist())
+
+        # 计算完成后，可以选择将candidate_features移回CPU以释放GPU内存
+        # candidate_features = candidate_features.cpu()
 
         cand_names = np.array([[unhash_did(candidate_ids[item]) for item in row] for row in index])
         query_names = [unhash_qid(item) for item in query_ids]
@@ -209,18 +200,19 @@ def eval(args):
         save_name = args.qrels_path.split('/')[-1].replace('_qrels.txt', '')
         model_name = args.model_id.split('/')[-1]
         save_name = f"{save_name}_{model_name}"
-        # with open(f"{save_dir_name}/{save_name}_query_names.json", 'w') as f:
-        #     json.dump(query_names, f, indent=2)
-        # with open(f"{save_dir_name}/{save_name}_cand_names.json", 'w') as f:
-        #     json.dump(cand_names.tolist(), f, indent=2)
-        # with open(f"{save_dir_name}/{save_name}_scores.json", 'w') as f:
-        #     json.dump(scores, f, indent=2)
+        with open(f"{save_dir_name}/{save_name}_query_names.json", 'w') as f:
+            json.dump(query_names, f, indent=2)
+        with open(f"{save_dir_name}/{save_name}_cand_names.json", 'w') as f:
+            json.dump(cand_names.tolist(), f, indent=2)
+        with open(f"{save_dir_name}/{save_name}_scores.json", 'w') as f:
+            json.dump(scores, f, indent=2)
         # torch.save(query_features.cpu(), f"{save_dir_name}/{save_name}_query_features.pth")
         # torch.save(candidate_features.cpu(), f"{save_dir_name}/{save_name}_candidate_features.pth")
         # with open(f"{save_dir_name}/{save_name}_query_ids.json", 'w') as f:
         #     json.dump(query_ids, f, indent=2)
         # with open(f"{save_dir_name}/{save_name}_candidate_ids.json", 'w') as f:
         #     json.dump(candidate_ids, f, indent=2)
+        
 
         qrel, qid_to_taskid = load_qrel(args.qrels_path)
 
@@ -234,8 +226,8 @@ def eval(args):
             relevant_docs = qrel[query_name]
             retrieved_indices_for_qid = cand_names[ind]
             for k in k_lists:
-                recall_at_k = compute_recall_at_k_rewrite(relevant_docs, retrieved_indices_for_qid, k)
-                res[f'recall_{k}'].extend(recall_at_k)
+                recall_at_k = compute_recall_at_k(relevant_docs, retrieved_indices_for_qid, k)
+                res[f'recall_{k}'].append(recall_at_k)
 
         for k in k_lists:
             print(f"recall_at_{k} = {sum(res[f'recall_{k}']) / len(res[f'recall_{k}'])}")
@@ -258,6 +250,8 @@ if __name__ == "__main__":
     parser.add_argument('--model_id', type=str)
     parser.add_argument('--query_cand_pool_path', type=str)
     parser.add_argument('--image_path_prefix', type=str)
+    parser.add_argument('--use_angle_sim', type=bool, default=False)
+    parser.add_argument('--nocausal_attn', type=bool, default=False)
 
     args = parser.parse_args()
     eval(args)

@@ -19,6 +19,11 @@ python eval_clip.py \
 """
 import json
 from transformers import SiglipProcessor, SiglipModel, AutoProcessor, AutoModel
+try:
+    from transformers import Blip2ForImageTextRetrieval,BlipForImageTextRetrieval
+except:
+    print("fail to import Blip2ForImageTextRetrieval,BlipForImageTextRetrieval")
+from transformers import pipeline, CLIPProcessor
 import sys 
 import os 
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -108,13 +113,21 @@ def compute_recall_at_k_rewrite(relevant_docs, retrieved_indices, k):
             
     return result
 
+def normalize_and_tensorize_boxes(bbox, image_width, image_height, feature_size=14):
+    x1, y1, x2, y2 = bbox
+    newbox = [0] + [i * feature_size for i in bbox]
+    boxes_tensor = torch.tensor(newbox, dtype=torch.float32)
+    # print(boxes_tensor)
+    return boxes_tensor
+
 class SiglipQueryDataCollator:
-    def __init__(self, processor, image_path_prefix, query_modal="image,text"):
+    def __init__(self, processor, image_path_prefix, query_modal="image,text", image_size=None):
         self.processor = processor
         self.image_path_prefix = image_path_prefix
         self.query_modal = query_modal.split(',') if query_modal else ["image", "text"]
         self.use_image = "image" in self.query_modal
         self.use_text = "text" in self.query_modal
+        self.image_size = image_size
 
     def crop_image_with_box(self, image, box):
         """根据box信息对图片进行crop"""
@@ -184,6 +197,7 @@ class SiglipQueryDataCollator:
         images = []
         texts = []
         query_ids = []
+        boxinfo_tensors = []
         
         for item in batch:
             # item is a tuple: (query_message, qid)
@@ -207,7 +221,12 @@ class SiglipQueryDataCollator:
                         box = content_item.get('box', None)
                         box_op = content_item.get('box_op', None)
             text_content = text_content.replace("\nSummarize above sentence in one word: ", "")
+            text_content = text_content.replace("\nSummarize above image and sentence in one word: ", "")
+            text_content = text_content.replace("\nSummarize above image in one word: ", "")
+            
+            # 清除prompt
             text_content = ".".join(text_content.split('.')[1:])
+            
             # 根据modal设置决定是否使用文本
             if self.use_text:
                 texts.append(text_content)
@@ -217,28 +236,43 @@ class SiglipQueryDataCollator:
             # 根据modal设置决定是否使用图片
             if self.use_image and image_path:
                 image = Image.open(image_path).convert('RGB')
-                # 根据box_op进行相应处理
-                image = self.process_image_with_box_op(image, box, box_op)
+                
+                if self.image_size is not None:
+                    # 获取原始图片尺寸用于bbox处理
+                    image_width, image_height = image.size
+
+                    # 处理boxinfo_tensor
+                    if box is not None:
+                        if self.image_size == 336:
+                            boxinfo_tensor = normalize_and_tensorize_boxes(box, image_width, image_height, feature_size=24)
+                        else:
+                            boxinfo_tensor = normalize_and_tensorize_boxes(box, image_width, image_height)
+                        boxinfo_tensors.append(boxinfo_tensor)
+                else:
+                    # 根据box_op进行相应处理
+                    image = self.process_image_with_box_op(image, box, box_op)
                 images.append(image)
             else:
                 images.append(Image.new('RGB', (224, 224), color='white'))
         
         # 使用SigLIP processor处理图片和文本
         inputs = self.processor(text=texts, images=images, return_tensors="pt", padding=True, truncation=True)
+        inputs.update({'query_ids': query_ids})
         
-        return {
-            'input_ids': inputs['input_ids'],
-            'pixel_values': inputs['pixel_values'],
-            'query_ids': query_ids
-        }
+        # 添加boxinfo_tensor到inputs
+        if len(boxinfo_tensors) > 0:
+            inputs.update({'boxinfo_tensors': torch.stack(boxinfo_tensors).squeeze(1)})
+
+        return inputs
 
 class SiglipCandidateDataCollator:
-    def __init__(self, processor, image_path_prefix, cand_modal="image,text"):
+    def __init__(self, processor, image_path_prefix, cand_modal="image,text", image_size=None):
         self.processor = processor
         self.image_path_prefix = image_path_prefix
         self.cand_modal = cand_modal.split(',') if cand_modal else ["image", "text"]
         self.use_image = "image" in self.cand_modal
         self.use_text = "text" in self.cand_modal
+        self.image_size = image_size
 
     def crop_image_with_box(self, image, box):
         """根据box信息对图片进行crop"""
@@ -308,6 +342,7 @@ class SiglipCandidateDataCollator:
         images = []
         texts = []
         candidate_ids = []
+        boxinfo_tensors = []
         
         for item in batch:
             # item is a tuple: (candidate_message, did)
@@ -332,6 +367,8 @@ class SiglipCandidateDataCollator:
                         box_op = content_item.get('box_op', None)
 
             text_content = text_content.replace("\nSummarize above sentence in one word: ", "")
+            text_content = text_content.replace("\nSummarize above image and sentence in one word: ", "")
+            text_content = text_content.replace("\nSummarize above image in one word: ", "")
             
             # 根据modal设置决定是否使用文本
             if self.use_text:
@@ -342,8 +379,21 @@ class SiglipCandidateDataCollator:
             # 根据modal设置决定是否使用图片
             if self.use_image and image_path:
                 image = Image.open(image_path).convert('RGB')
-                # 根据box_op进行相应处理
-                image = self.process_image_with_box_op(image, box, box_op)
+                
+                if self.image_size is not None:
+                    # 获取原始图片尺寸用于bbox处理
+                    image_width, image_height = image.size
+
+                    # 处理boxinfo_tensor
+                    if box is not None:
+                        if self.image_size == 336:
+                            boxinfo_tensor = normalize_and_tensorize_boxes(box, image_width, image_height, feature_size=24)
+                        else:
+                            boxinfo_tensor = normalize_and_tensorize_boxes(box, image_width, image_height)
+                        boxinfo_tensors.append(boxinfo_tensor)
+                else:
+                    # 根据box_op进行相应处理
+                    image = self.process_image_with_box_op(image, box, box_op)
                 images.append(image)
             else:
                 # 不使用图片或图片路径为空，使用空白图片
@@ -351,39 +401,83 @@ class SiglipCandidateDataCollator:
         
         # 使用SigLIP processor处理图片和文本
         inputs = self.processor(text=texts, images=images, return_tensors="pt", padding=True, truncation=True)
+        inputs.update({'candidate_ids': torch.tensor(candidate_ids)})
         
-        return {
-            'input_ids': inputs['input_ids'],
-            'pixel_values': inputs['pixel_values'],
-            'candidate_ids': torch.tensor(candidate_ids)
-        }
+        # 添加boxinfo_tensor到inputs
+        if len(boxinfo_tensors) > 0:
+            inputs.update({'boxinfo_tensors': torch.stack(boxinfo_tensors).squeeze(1)})
+        
+        return inputs
 
 def eval(args):
     model_id = args.model_id
-    # 加载SigLIP模型和处理器
-    model = AutoModel.from_pretrained(model_id, torch_dtype=torch.bfloat16)
-    processor = AutoProcessor.from_pretrained(model_id)
+    if "blip2" in model_id:
+        model = Blip2ForImageTextRetrieval.from_pretrained(model_id, torch_dtype=torch.bfloat16)
+    elif "blip" in model_id:
+        model = BlipForImageTextRetrieval.from_pretrained(model_id, torch_dtype=torch.bfloat16)
+    elif "fg-clip" in model_id:
+        from fgclip.model.clip_strc.fgclip import FGCLIPModel
+        model = FGCLIPModel.from_pretrained(model_id, ignore_mismatched_sizes=True)
+    else:
+        model = AutoModel.from_pretrained(model_id, torch_dtype=torch.bfloat16, trust_remote_code=True)
+    
+    model_type = type(model)
+
+    if "EVA-CLIP" in model_id:
+        processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+        model_type = "EVA-CLIP"
+    elif "fg-clip" in model_id:
+        processor = CLIPProcessor.from_pretrained(model_id)
+        model_type = "fg-clip"
+    else:  
+        processor = AutoProcessor.from_pretrained(model_id)
+
 
     # 解析modal参数
     query_modals = args.query_modal.split(',') if args.query_modal else ["image", "text"]
     cand_modals = args.cand_modal.split(',') if args.cand_modal else ["image", "text"]
-    
-    def get_embedding(outputs, modals):
+
+    def get_embedding(model, batch, modals, model_type = model_type):
         """根据指定的模态组合生成embedding"""
-        image_embeds = outputs.image_embeds  # [batch_size, hidden_size]
-        text_embeds = outputs.text_embeds    # [batch_size, hidden_size]
+        if model_type == BlipForImageTextRetrieval:
+            batch.update({
+                "use_itm_head": False
+            })
+
+        if model_type == "EVA-CLIP":
+            image_embeds = model.module.encode_image(batch['pixel_values'])
+            text_embeds = model.module.encode_text(batch["input_ids"])
+        elif model_type == "fg-clip":
+            # if "text" in modals:
+            #     walk_short_pos=False
+            # else:
+            #     walk_short_pos=True
+            # if (box_info:= getattr(batch, 'boxinfo_tensors', None)) is not None:
+            #     image_embeds = model.module.get_image_box_roi_features(batch['pixel_values'], box_info=box_info)
+            # else:
+            #     image_embeds = model.module.get_image_features(batch['pixel_values'])
+            # text_embeds = model.module.get_text_features(batch["input_ids"],walk_short_pos=walk_short_pos)
+            # TODO roi align returns poor results
+            text_embeds = model.module.get_text_features(batch["input_ids"],walk_short_pos=True) # walk_short_pos 指的是使用短文本
+            image_embeds = model.module.get_image_features(batch['pixel_values'])
+        else:
+            outputs = model(**batch)
+            image_embeds = outputs.image_embeds  # [batch_size, hidden_size]
+            text_embeds = outputs.text_embeds    # [batch_size, hidden_size]
+        
+        if model_type == Blip2ForImageTextRetrieval:
+            # https://github.com/huggingface/transformers/blob/v4.56.0/src/transformers/models/blip_2/modeling_blip_2.py#L2220
+            # blip https://github.com/huggingface/transformers/blob/v4.56.0/src/transformers/models/blip/modeling_blip.py#L126
+            #      /usr/local/lib/python3.10/dist-packages/transformers/models/blip/modeling_blip.py
+            image_embeds = image_embeds.mean(dim=1)
         
         if "image" in modals and "text" in modals:
-            # 使用图片和文本的平均
             embed = (image_embeds + text_embeds) / 2
         elif "image" in modals:
-            # 只使用图片
             embed = image_embeds
         elif "text" in modals:
-            # 只使用文本
             embed = text_embeds
         else:
-            # 默认使用平均
             embed = (image_embeds + text_embeds) / 2
             
         return F.normalize(embed, dim=-1)
@@ -402,8 +496,8 @@ def eval(args):
         image_path_prefix=args.image_path_prefix
     )
 
-    query_data_collator = SiglipQueryDataCollator(processor=processor, image_path_prefix=args.image_path_prefix, query_modal=args.query_modal)
-    cand_data_collator = SiglipCandidateDataCollator(processor=processor, image_path_prefix=args.image_path_prefix, cand_modal=args.cand_modal)
+    query_data_collator = SiglipQueryDataCollator(processor=processor, image_path_prefix=args.image_path_prefix, query_modal=args.query_modal, image_size=args.image_size)
+    cand_data_collator = SiglipCandidateDataCollator(processor=processor, image_path_prefix=args.image_path_prefix, cand_modal=args.cand_modal, image_size=args.image_size)
     
     query_dataloader = DataLoader(query_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=query_data_collator)
     candidate_dataloader = DataLoader(cand_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
@@ -434,25 +528,20 @@ def eval(args):
         for batch in tqdm(query_dataloader, disable=not is_main_process):
             batch_query_ids = batch.pop('query_ids')
             batch = tensors_to_device(batch, device)
-            
-            # 获取查询的图片和文本embedding
-            outputs = model(**batch)
             # 根据query_modal设置生成embedding
-            query_embed = get_embedding(outputs, query_modals)
-            
+            query_embed = get_embedding(model, batch, query_modals)
             query_embed = accelerator.gather_for_metrics(query_embed)
             batch_query_ids = accelerate.utils.gather_object(batch_query_ids)[:len(query_embed)]
             query_ids.extend(batch_query_ids)
             query_features.append(query_embed)
+
         # 处理候选数据（图片+文本）
         for batch in tqdm(candidate_dataloader, disable=not is_main_process):
             batch_candidate_ids = batch.pop('candidate_ids')
             batch = tensors_to_device(batch, device)
             
-            # 获取图片和文本的联合embedding
-            outputs = model(**batch)
             # 根据cand_modal设置生成embedding
-            candidate_embed = get_embedding(outputs, cand_modals)
+            candidate_embed = get_embedding(model, batch, cand_modals)
             
             candidate_embed = accelerator.gather_for_metrics(candidate_embed)
             batch_candidate_ids = accelerator.gather_for_metrics(batch_candidate_ids)[:len(candidate_embed)]
@@ -489,12 +578,12 @@ def eval(args):
         save_name = args.qrels_path.split('/')[-1].replace('_qrels.txt', '')
         model_name = args.model_id.split('/')[-1]
         save_name = f"{save_name}_{model_name}"
-        with open(f"{save_dir_name}/{save_name}_query_names.json", 'w') as f:
-            json.dump(query_names, f, indent=2)
-        with open(f"{save_dir_name}/{save_name}_cand_names.json", 'w') as f:
-            json.dump(cand_names.tolist(), f, indent=2)
-        with open(f"{save_dir_name}/{save_name}_scores.json", 'w') as f:
-            json.dump(scores, f, indent=2)
+        # with open(f"{save_dir_name}/{save_name}_query_names.json", 'w') as f:
+        #     json.dump(query_names, f, indent=2)
+        # with open(f"{save_dir_name}/{save_name}_cand_names.json", 'w') as f:
+        #     json.dump(cand_names.tolist(), f, indent=2)
+        # with open(f"{save_dir_name}/{save_name}_scores.json", 'w') as f:
+        #     json.dump(scores, f, indent=2)
         
 
         qrel, qid_to_taskid = load_qrel(args.qrels_path)
@@ -536,6 +625,8 @@ if __name__ == "__main__":
                         help='Modalities for query processing: "image", "text", or "image,text"')
     parser.add_argument('--cand_modal', type=str, default='image,text', 
                         help='Modalities for candidate processing: "image", "text", or "image,text"')
+    parser.add_argument('--image_size', type=int, default=None, 
+                        help='Image size for resizing (224 or 336)')
 
     args = parser.parse_args()
     eval(args)
