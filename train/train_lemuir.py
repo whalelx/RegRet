@@ -47,6 +47,18 @@ def setup_debugpy(local_rank):
         debugpy.wait_for_client()
     dist.barrier()
 
+
+try:
+    # 尝试添加_reconstruct和dtype，以覆盖大多数情况
+    import numpy
+    torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct, numpy.dtype])
+    torch.serialization.add_safe_globals([numpy.ndarray])
+    torch.serialization.add_safe_globals([numpy.dtypes.UInt32DType])
+    
+except AttributeError:
+    # 如果你的PyTorch版本较旧，可能没有这个函数，可以忽略
+    print("Warning: torch.serialization.add_safe_globals not found. This might be an issue on newer torch versions.")
+
 def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments, LoraArguments)
@@ -267,16 +279,18 @@ def train():
     
     eval_dataset = None
     training_args.eval_strategy = "no"
-    # training_args.save_strategy = "steps"
-    # training_args.save_steps = 500
-    # training_args.save_total_limit = 1
+    # training_args.resume_from_checkpoint=True
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](
         tokenizer=tokenizer,
         processor=processor,
     )
 
-    training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
+    # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # This line some times stuck the training pipeline 
+    model.config.use_cache=False
+    
+    # from transformers.trainer_utils import get_last_checkpoint
+    # last_ckpt = get_last_checkpoint(training_args.output_dir) 
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -284,6 +298,7 @@ def train():
         train_dataset=train_dataset,
     )
     
+    # trainer.train(resume_from_checkpoint=last_ckpt)
     trainer.train()
     trainer.save_state()
 
