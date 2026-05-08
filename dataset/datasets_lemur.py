@@ -4,7 +4,7 @@ Set of training dataset for Lemur benchmark.
 from .datasets_mbeir import LazySupervisedDataset
 from datasets import load_dataset
 
-CACHE_DIR = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset"
+CACHE_DIR = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset"
 
 class VisMinCLDataset(LazySupervisedDataset):
     def __init__(
@@ -87,7 +87,7 @@ class ImgDiffCLDataset(LazySupervisedDataset):
         query_data_path: str, 
         cand_pool_path: str, 
         instructions_path: str,
-        image_path_prefix: str, # "/mnt/tidal-alsh01/dataset/mmeb/Img-Diff/"
+        image_path_prefix: str, # "/mnt/tidalfs-hssh01/dataset/mmeb/Img-Diff/"
         tokenizer=None 
     ) -> None:
         super().__init__(query_data_path, cand_pool_path, instructions_path, image_path_prefix, tokenizer)
@@ -295,3 +295,11 @@ BOX_OP_DICT = {
     DamCLDataset: lambda: "crop", 
     XHSDataset: lambda: "crop",
 }
+
+# lamra fgmb ablation 的版本
+# BOX_OP_DICT = {
+#     VisMinCLDataset: lambda: "draw",
+#     ImgDiffCLDataset: lambda: "draw",
+#     DamCLDataset: lambda: "draw", 
+#     XHSDataset: lambda: "draw",
+# } 
