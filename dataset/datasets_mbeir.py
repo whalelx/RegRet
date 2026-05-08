@@ -139,11 +139,13 @@ class LazySupervisedDataset(Dataset):
 
         return query_message, cand_message 
 
+import os
+BOXOP = os.getenv("BOXOP", "draw")
 # box op for eval
 # BOXOP = "none"
 # BOXOP = "crop"
 # BOXOP = "draw"
-BOXOP = "concat"
+# BOXOP = "concat"
 
 class QueryDataset(Dataset):
     """Dataset for supervised fine-tuning 

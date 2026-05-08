@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers.models.qwen2_vl.modeling_qwen2_vl import VisionMlp, PatchMerger, flash_attn_varlen_func, Qwen2VisionTransformerPretrainedModel
 from transformers.models.qwen2_vl.modeling_qwen2_vl import rotate_half
+import os
+LAYERWISE=bool(int(os.environ.get("LAYERWISE", "0")))
 
 def apply_rotary_pos_emb_vision(
     q: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
@@ -123,7 +125,7 @@ class Qwen2ContextVisionTransformerPretrainedModel(Qwen2VisionTransformerPretrai
             grid_thw, 
             id_dict=None,
             group_imgs=None,
-            enc_dec_arch=False, 
+            enc_dec_arch=LAYERWISE,
         ):
         justfull_image_num = len(id_dict.justfull)
         full_pixel_values = torch.cat([group_imgs[k]['pixel_values'] for k in ("justfull", "concat_full", "crop_full")], dim=0)

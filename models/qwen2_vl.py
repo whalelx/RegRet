@@ -186,10 +186,10 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
                 'image_grid_thw': concat_full_image_grid_thw
             }
         }
-        if not self.flag_set_causal and self.config.nocausal_attn:
-            for layer in self.model.layers:
-                layer.self_attn.is_causal = False
-            self.flag_set_causal = True
+        # if not self.flag_set_causal and self.config.nocausal_attn:
+        #     for layer in self.model.layers:
+        #         layer.self_attn.is_causal = False
+        #     self.flag_set_causal = True
 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -204,7 +204,7 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
                 if (sub_pixel_values := group_imgs[k]['pixel_values']) is not None and len(sub_pixel_values) > 0:
                     group_imgs[k]['pixel_values'] = sub_pixel_values.type(self.visual.dtype)
                     use_image = True
-            if pixel_values is not None or use_image:
+            if (pixel_values is not None and len(pixel_values)>0) or use_image:
                 pixel_values = pixel_values.type(self.visual.dtype) if pixel_values is not None else None
                 image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw, group_imgs=group_imgs, id_dict=id_dict)
                 n_image_tokens = (input_ids == self.config.image_token_id).sum().item()

@@ -437,6 +437,10 @@ class Id2Mask:
     @property
     def multi_img_texts(self) -> list[int]:
         return self.id_dict.get("multi_img_texts", [])
+
+    @property
+    def image_num_for_minibatch(self):
+        return self.id_dict.get("image_num_for_minibatch", [])
     
     @staticmethod
     def get_imgtoken_ids(self, key:str, thw: torch.Tensor) -> list[int]: # thw: (batchsz, 3)
@@ -481,6 +485,7 @@ def process_vision_info_with_focal(
     id_justfull = []
     multi_img_texts = [] # 我们的concat模式下需要添加一张图片
     cnt = 0
+    image_num_for_minibatch = []
 
     for i, vision_info in zip(ids, vision_infos):
         if "image" in vision_info or "image_url" in vision_info:
@@ -489,16 +494,23 @@ def process_vision_info_with_focal(
             if not has_box or box_mode == "none":
                 image_inputs.append(fetch_image(vision_info, box_op="none"))
                 id_justfull.append(cnt)
+                image_num_for_minibatch.append(1)
                 cnt += 1
             elif box_mode == "crop":
                 image_inputs.append(fetch_image(vision_info, box_op="none"))
                 id_crop_full.append(cnt)
                 image_inputs.append(fetch_image(vision_info, box_op="crop"))
                 id_crop_crop.append(cnt+1)
+                image_num_for_minibatch.append(2)
                 cnt += 2
+            elif box_mode == "crop-lamra":
+                image_inputs.append(fetch_image(vision_info, box_op="crop"))
+                id_justfull.append(cnt)
+                cnt += 1
             elif box_mode == "draw":
                 image_inputs.append(fetch_image(vision_info, box_op="draw"))
                 id_justfull.append(cnt)
+                image_num_for_minibatch.append(1)
                 cnt += 1
             elif box_mode == "concat":
                 image_inputs.append(fetch_image(vision_info, box_op="none"))
@@ -506,11 +518,14 @@ def process_vision_info_with_focal(
                 image_inputs.append(fetch_image(vision_info, box_op="crop"))
                 id_concat_crop.append(cnt+1)
                 multi_img_texts.append(i)
+                image_num_for_minibatch.extend([1,1])
                 # for global vit models
                 # image_inputs.append(fetch_image(vision_info, box_op="none"))
                 # id_justfull.append(cnt)
+                # multi_img_texts.append(i)
                 # image_inputs.append(fetch_image(vision_info, box_op="crop"))
                 # id_justfull.append(cnt+1)
+                # image_num_for_minibatch.extend([1,1])
                 cnt += 2
 
     id_dict = Id2Mask({
@@ -519,7 +534,9 @@ def process_vision_info_with_focal(
         "concat_full": id_concat_full,
         "concat_crop": id_concat_crop,
         "justfull": id_justfull,
-        "multi_img_texts": multi_img_texts
+        "multi_img_texts": multi_img_texts,
+        "image_num_for_minibatch": image_num_for_minibatch
+
     })
 
     return image_inputs, id_dict
