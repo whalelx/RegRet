@@ -906,9 +906,8 @@ def parse_args(args):
 
 def get_embedding(model, batch, modals):
     """根据指定的模态组合生成embedding"""
-    outputs = model(batch['image'], batch['text'])
-    image_features = outputs["image_features"]
-    text_features = outputs["text_features"]
+    image_features = model.module.encode_image(batch['image']) 
+    text_features = model.module.encode_text(batch['text']) 
     
     if "image" in modals and "text" in modals:
         embed = (image_features + text_features) / 2
@@ -928,25 +927,42 @@ def main(args):
     model_kwargs['tag_mode'] = args.tag_mode
     model_kwargs['cache_dir'] = args.cache_dir
     model, _, preprocess_val = create_model_and_transforms(
-        args.vit_backbone,
-        args.model_name,
-        precision=args.precision,
-        device="cuda",
-        jit=args.torchscript,
-        force_quick_gelu=args.force_quick_gelu,
-        force_custom_text=args.force_custom_text,
-        force_patch_dropout=args.force_patch_dropout,
-        force_image_size=args.force_image_size,
-        image_mean=args.image_mean,
-        image_std=args.image_std,
-        image_interpolation=args.image_interpolation,
-        image_resize_mode=args.image_resize_mode,  # only effective for inference
-        pretrained_image=args.pretrained_image,
-        output_dict=True,
-        use_meta_noun=args.meta_nouns,
-        **model_kwargs,
+        # args.vit_backbone,
+        # args.model_name,
+    #     precision=args.precision,
+    #     device="cuda",
+    #     jit=args.torchscript,
+    #     force_quick_gelu=args.force_quick_gelu,
+    #     force_custom_text=args.force_custom_text,
+    #     force_patch_dropout=args.force_patch_dropout,
+    #     force_image_size=args.force_image_size,
+    #     image_mean=args.image_mean,
+    #     image_std=args.image_std,
+    #     image_interpolation=args.image_interpolation,
+    #     image_resize_mode=args.image_resize_mode,  # only effective for inference
+    #     pretrained_image=args.pretrained_image,
+    #     output_dict=True,
+    #     use_meta_noun=args.meta_nouns,
+    #     **model_kwargs,
+    # )
+            "EVA02-CLIP-L-14-336",
+            "eva",
+            "amp",
+            device="cuda",
+            jit=False,
+            force_quick_gelu=False,
+            force_custom_text=False,
+            force_patch_dropout=None,
+            force_image_size=None,
+            pretrained_image=False,
+            image_mean=None,
+            image_std=None,
+            aug_cfg={},
+            output_dict=True,
+            cache_dir=args.model_name,
+            det_image_size=336,
+            dataset_type="grid_distill",
     )
-
     # Get tokenizer
     tokenizer = get_tokenizer(args.vit_backbone)
     
@@ -954,6 +970,8 @@ def main(args):
     class OpenCLIPProcessor:
         def __init__(self, preprocess_fn, tokenizer):
             self.preprocess_fn = preprocess_fn
+            # if isinstance(preprocess_fn, list):
+            self.preprocess_fn = preprocess_fn[0]
             self.tokenizer = tokenizer
             
         def __call__(self, text=None, images=None, return_tensors="pt"):
@@ -963,6 +981,7 @@ def main(args):
                     processed_images = []
                     for img in images:
                         processed_images.append(self.preprocess_fn(img))
+
                     result['image'] = torch.stack(processed_images, dim=0)
                 else:
                     result['image'] = self.preprocess_fn(images).unsqueeze(0)
@@ -1026,17 +1045,17 @@ def main(args):
     )
 
     # Initialize accelerator
-    accelerator = Accelerator(mixed_precision='bf16')
+    accelerator = Accelerator(mixed_precision='no')
     device = accelerator.device 
     is_main_process = accelerator.is_main_process
-
+    model.to(torch.float32)
     model.eval()
 
     def tensors_to_device(data, device, dtype=model.dtype if hasattr(model, 'dtype') else torch.float16):
         for key in data.keys():
             if isinstance(data[key], torch.Tensor):
                 if key == 'image':
-                    data[key] = data[key].to(device).to(dtype)
+                    data[key] = data[key].to(device).to(torch.float32)
                 else:
                     data[key] = data[key].to(device)
         return data 

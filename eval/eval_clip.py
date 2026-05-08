@@ -192,7 +192,19 @@ class SiglipQueryDataCollator:
         else:
             # 默认情况，如果不认识的box_op，使用crop
             return self.crop_image_with_box(image, box)
-
+    def process_image_with_box_op2(self, image, box, box_op):
+        """根据box_op类型处理图片"""
+        if box_op == "crop":
+            return self.crop_image_with_box(image, box), None
+        elif box_op == "draw":
+            return self.draw_box_on_image(image, box), None
+        elif box_op == "none" or box_op is None:
+            return image
+        elif box_op == "concat":
+            return image, self.crop_image_with_box(image, box)
+        else:
+            # 默认情况，如果不认识的box_op，使用crop
+            return self.crop_image_with_box(image, box), None
     def __call__(self, batch):
         images = []
         texts = []
@@ -225,7 +237,7 @@ class SiglipQueryDataCollator:
             text_content = text_content.replace("\nSummarize above image in one word: ", "")
             
             # 清除prompt
-            text_content = ".".join(text_content.split('.')[1:])
+            # text_content = ".".join(text_content.split('.')[1:])
             
             # 根据modal设置决定是否使用文本
             if self.use_text:
@@ -337,7 +349,19 @@ class SiglipCandidateDataCollator:
         else:
             # 默认情况，如果不认识的box_op，使用crop
             return self.crop_image_with_box(image, box)
-
+    def process_image_with_box_op2(self, image, box, box_op):
+        """根据box_op类型处理图片"""
+        if box_op == "crop":
+            return self.crop_image_with_box(image, box), None
+        elif box_op == "draw":
+            return self.draw_box_on_image(image, box), None
+        elif box_op == "none" or box_op is None:
+            return image
+        elif box_op == "concat":
+            return image, self.crop_image_with_box(image, box)
+        else:
+            # 默认情况，如果不认识的box_op，使用crop
+            return self.crop_image_with_box(image, box), None
     def __call__(self, batch):
         images = []
         texts = []

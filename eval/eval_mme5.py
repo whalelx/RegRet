@@ -2,6 +2,7 @@ import json
 import sys
 import os
 import torch
+import time
 import numpy as np
 import argparse
 from tqdm import tqdm
@@ -133,9 +134,14 @@ class MME5CandidateDataCollator(SiglipCandidateDataCollator):
             if self.use_image and image_path:
                 image = Image.open(image_path).convert('RGB')
                 
-                image = self.process_image_with_box_op(image, box, box_op)
-                images.append(image)
-                text_content = f"{TOKEN}\nRepresent the given image with related text information:" + text_content
+                image, image2 = self.process_image_with_box_op2(image, box, box_op)
+                if image2 is not None:
+                    images.append(image)
+                    text_content = f"{TOKEN}\nRepresent the given image with related text information:" + text_content
+                else:
+                    images.append(image)
+                    # images.append()
+                    text_content = f"{TOKEN}\nRepresent the given image with related text information:" + text_content
             else:
                 images.append(None)
 
@@ -234,7 +240,7 @@ def eval_mmeb(args):
     print(f"Starting MMEB evaluation with model: {args.model_name}")
     print(f"Model backbone: {args.model_backbone}")
     assert args.model_backbone == "mllama"
-    print(f"Batch size: {getattr(args, 'batch_size', 64)}")
+    print(f"Batch size: {getattr(args, 'batch_size', 32)}")
     
     # Setup arguments similar to eval.py
     model_args = ModelArguments(model_name=args.model_name)
@@ -256,7 +262,7 @@ def eval_mmeb(args):
     
     # training_args.device = "cuda"
     training_args.per_device_eval_batch_size = getattr(args, 'batch_size', 64)
-    training_args.dataloader_num_workers = 0
+    training_args.dataloader_num_workers = 8
     
     # Setup processor for llava_next
     if os.environ["CODEBASE"] == "vlm2vec":
@@ -340,8 +346,40 @@ def eval_mmeb(args):
     query_ids = []
     candidate_features = []
     candidate_ids = []
-    
+    candidate_times = []
+
     with torch.no_grad():
+        # Encode candidates
+        for batch in tqdm(candidate_dataloader, desc="Encoding candidates"):
+            if os.environ["CODEBASE"] == "mmembed":
+                batch, batch_ids = batch
+                candidate_ids.extend(batch_ids)
+            else:
+                # Extract IDs first
+                batch_ids = batch.get('qiddid', [])
+                if isinstance(batch_ids, torch.Tensor):
+                    candidate_ids.extend(batch_ids.cpu().numpy().tolist())
+                else:
+                    candidate_ids.extend(batch_ids)
+                # Remove ID field and move to device
+                batch = {key: value.to(device) for key, value in batch.items() if key != 'qiddid'}
+            
+            with torch.autocast(enabled=True, dtype=torch.bfloat16, device_type="cuda"):
+                if os.environ["CODEBASE"] == "mmembed":
+                    start_time = time.time()
+                    cand_embeddings = model.encode(batch[:-1], max_length=4096)['hidden_states']
+                    end_time = time.time()
+                    candidate_features.append(cand_embeddings)
+                    # candidate_times.append(end_time - start_time)
+                    # if len(candidate_times) >= 50: # TODO 统计时间
+                    #     with open("./time.txt","a") as f:
+                    #         f.write(f"candi inference time: {sum(candidate_times[10:])/len(candidate_times[10:])} seconds")
+                    #     exit()
+                else:
+                    # Remove ID field and move to device
+                    output = model(tgt=batch)
+                    candidate_features.append(output["tgt_reps"])
+
         # Encode queries
         for batch in tqdm(query_dataloader, desc="Encoding queries"):
             if os.environ["CODEBASE"] == "mmembed":
@@ -367,36 +405,11 @@ def eval_mmeb(args):
                     output = model(qry=batch)
                     query_features.append(output["qry_reps"])
         
-        # Encode candidates
-        for batch in tqdm(candidate_dataloader, desc="Encoding candidates"):
-            if os.environ["CODEBASE"] == "mmembed":
-                batch, batch_ids = batch
-                candidate_ids.extend(batch_ids)
-            else:
-                # Extract IDs first
-                batch_ids = batch.get('qiddid', [])
-                if isinstance(batch_ids, torch.Tensor):
-                    candidate_ids.extend(batch_ids.cpu().numpy().tolist())
-                else:
-                    candidate_ids.extend(batch_ids)
-                # Remove ID field and move to device
-                batch = {key: value.to(device) for key, value in batch.items() if key != 'qiddid'}
-            
-            with torch.autocast(enabled=True, dtype=torch.bfloat16, device_type="cuda"):
-                if os.environ["CODEBASE"] == "mmembed":
-                    cand_embeddings = model.encode(batch[:-1], max_length=4096)['hidden_states']
-                    candidate_features.append(cand_embeddings)
-                else:
-                    # Remove ID field and move to device
-                    output = model(tgt=batch)
-                    candidate_features.append(output["tgt_reps"])
-
     # Concatenate features
     query_features = torch.cat(query_features, dim=0)
     candidate_features = torch.cat(candidate_features, dim=0)
     
     if is_main_process:
-        # Adjust the order according to ids 
         import numpy as np 
 
         index = []
@@ -462,7 +475,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_backbone', type=str, default='mllama', help='Model backbone (phi35v)')
     parser.add_argument('--query_cand_pool_path', type=str, required=True, help='Path to query candidate pool')
     parser.add_argument('--image_path_prefix', type=str, required=True, help='Prefix path for images')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size for evaluation')
+    parser.add_argument('--batch_size', type=int, default=16, help='Batch size for evaluation')
     parser.add_argument('--num_crops', type=int, default=4, help='Number of crops for phi3_v processor')
     parser.add_argument("--pooling", type=str, default="last", help="Pooling method for MMEB model")
     parser.add_argument("--normalize", type=bool, default=True, help="Whether to normalize features")
