@@ -1,10 +1,13 @@
-MODEL_ID="./checkpoints/qwen2-vl-7b_Lemur_585ktxt_nocausal_tune_stage2-largebs"
+# MODEL_ID="./checkpoints/qwen2-vl-7b_Lemur_585ktxt_nocausal_tune_stage2-largebs"
+
+MODEL_ID="checkpoints/qwen2-vl-7b_Lemur_585ktxt_final_tune_stage2-largebs"
+# MODEL_ID="./checkpoints/qwen2-vl-7b_abla_vpt_585ktxt_tune_stage2-largebs"
 
 ORIGINAL_MODEL_ID=/mnt/tidalfs-hssh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2-VL-7B-Instruct/snapshots/eed13092ef92e448dd6875b2a00151bd3f7db0ac/ 
 
 IMAGE_PATH_PREFIX=/mnt/tidalfs-hssh01/dataset/mmeb/M-BEIR
 
-
+export BOXOP=concat
 
 
 #!/bin/bash

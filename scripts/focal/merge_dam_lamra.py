@@ -30,17 +30,33 @@ vision_backbone = "checkpoints/qwen2-vl-2b_DAM_cp_enc/checkpoint-500"
 # lamra_model = "./checkpoints/tempckpt"
 # vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision"
 
-base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(vision_backbone,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
-lamra_ret = Qwen2VLRetForConditionalGeneration.from_pretrained(lamra_model,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 
-lamra_ret.visual.load_state_dict(copy.deepcopy(base_model.visual.state_dict()))
+save_dir = "checkpoints/Lemur_7B_Pretrain_585ktxt_final"
+lamra_model = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc"
+vision_backbone = "checkpoints/qwen2-vl-7b_DAM_cp_final"
 
-print("@attn_factor: ", lamra_ret.visual.context_layers[0].attn_factor)
-print("@gt attn_factor: ", base_model.visual.context_layers[0].attn_factor)
+save_dir = "checkpoints/Lemur_8B_zeroshot-enc"
+lamra_model = "../LamRA/checkpoints/LamRA-Ret/"
+# lamra_model = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc" 用来搞定processor
+vision_backbone = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc"
 
-lamra_ret.save_pretrained(save_dir)
 
-base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(save_dir,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+save_dir = "checkpoints/Lemur_8B_zeroshot-enc"
+lamra_model = "../LamRA/checkpoints/LamRA-Ret/"
+# lamra_model = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc" 用来搞定processor
+vision_backbone = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc"
+
+# base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(vision_backbone,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+# lamra_ret = Qwen2VLRetForConditionalGeneration.from_pretrained(lamra_model,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+
+# lamra_ret.visual.load_state_dict(copy.deepcopy(base_model.visual.state_dict()))
+
+# print("@attn_factor: ", lamra_ret.visual.context_layers[0].attn_factor)
+# print("@gt attn_factor: ", base_model.visual.context_layers[0].attn_factor)
+
+# lamra_ret.save_pretrained(save_dir)
+
+# base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(save_dir,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 
 processor = AutoProcessor.from_pretrained(lamra_model)
 processor.save_pretrained(save_dir)  # 这一句会把preprocessor_config.json、chat_template.json等复制过来

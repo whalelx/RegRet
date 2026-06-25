@@ -174,6 +174,14 @@ def train():
         # rank0_print("Embedding/Language head will be fully trained...")
         # full_modules.extend(llm_heads_keys)
 
+        # full module tune ctx
+        # full_modules.extend([f"visual.ctx_merger"])
+        # for i in range(model.config.vision_config.depth):
+        #     full_modules.extend([f"visual.context_layers.{i}"])
+        
+        # loar tune ctx
+        # lora_modules.extend(find_all_linear_names(named_modules, MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]))
+
         lora_config = LoraConfig(
             r=lora_args.lora_r,
             lora_alpha=lora_args.lora_alpha,
@@ -212,52 +220,60 @@ def train():
     # )
     # copali_ds = CopaliDataset()
 
-    # vismin_dataset = VisMinCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_vismin_task6_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_vismin_task6_cand_pool.jsonl"),
-    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
-    #     img_parquet_path=os.path.join(data_args.image_path_prefix, "../vismin"),
-    #     image_path_prefix="",
-    #     tokenizer=tokenizer,
-    # )
+    vismin_dataset = VisMinCLDataset(
+        query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_vismin_task6_train.jsonl"),
+        cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_vismin_task6_cand_pool.jsonl"),
+        instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+        img_parquet_path=os.path.join(data_args.image_path_prefix, "../vismin"),
+        image_path_prefix="",
+        tokenizer=tokenizer,
+    )
+    imgdiff_dataset = ImgDiffCLDataset(
+        query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_imgdiff_task6_train.jsonl"),
+        cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_imgdiff_task6_cand_pool.jsonl"),
+        instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+        image_path_prefix=os.path.join(data_args.image_path_prefix, "../Img-Diff"),
+        tokenizer=tokenizer,
+    )
+    dam0_dataset = DamCLDataset(
+        query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_dam_task0_train.jsonl"),
+        cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_dam_task0_cand_pool.jsonl"),
+        instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+        parquet_path=data_args.dam_data_path,
+        image_path_prefix="",
+        tokenizer=tokenizer,
+    )
+    dam3_dataset = DamCLDataset(
+        query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_dam_task3_train.jsonl"),
+        cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_dam_task3_cand_pool.jsonl"),
+        instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+        parquet_path=data_args.dam_data_path,
+        image_path_prefix="",
+        tokenizer=tokenizer,
+    )
 
-    # imgdiff_dataset = ImgDiffCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_imgdiff_task6_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_imgdiff_task6_cand_pool.jsonl"),
-    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
-    #     image_path_prefix=os.path.join(data_args.image_path_prefix, "../Img-Diff"),
-    #     tokenizer=tokenizer,
-    # )
-    # dam0_dataset = DamCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_dam_task0_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_dam_task0_cand_pool.jsonl"),
-    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
-    #     parquet_path=data_args.dam_data_path,
-    #     image_path_prefix="",
-    #     tokenizer=tokenizer,
-    # )
-    # dam3_dataset = DamCLDataset(
-    #     query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_dam_task3_train.jsonl"),
-    #     cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_dam_task3_cand_pool.jsonl"),
-    #     instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
-    #     parquet_path=data_args.dam_data_path,
-    #     image_path_prefix="",
-    #     tokenizer=tokenizer,
-    # )
+    xhs_dataset = XHSDataset(
+        query_data_path=data_args.xhs_query_data_path,
+        cand_pool_path=data_args.xhs_cand_pool_path,
+        instructions_path=data_args.instructions_path,
+        image_path_prefix="/mnt/tidalfs-hssh01/dataset/mmeb/xhs_data/note_data/20250304/images/",
+        tokenizer=tokenizer 
+    )
 
-    # xhs_dataset = XHSDataset(
-    #     query_data_path=data_args.xhs_query_data_path,
-    #     cand_pool_path=data_args.xhs_cand_pool_path,
-    #     instructions_path=data_args.instructions_path,
-    #     image_path_prefix="/mnt/tidal-alsh01/dataset/mmeb/xhs_data/note_data/20250304/images/",
-    #     tokenizer=tokenizer 
-    # )
+    xhs_dataset7 = XHSDataset(
+        query_data_path="/mnt/tidalfs-hssh01/dataset/mmeb/M-BEIR/query/train/mbeir_xhsgood_task7_merge_train.jsonl",
+        cand_pool_path="/mnt/tidalfs-hssh01/dataset/mmeb/M-BEIR/cand_pool/local/mbeir_xhsgood_task7_merge_cand_pool.jsonl",
+        instructions_path=data_args.instructions_path,
+        image_path_prefix="/mnt/tidalfs-hssh01/dataset/mmeb/xhs_data/goods_data/from_20250316_to_20250607/imageslx",
+        tokenizer=tokenizer
+    )
+ 
     # dam_dataset = DAMDataset(
     #     data_path=data_args.dam_data_path,
     #     max_length=data_args.dam_max_samples
     # )
     # mbeir_language_dataset = MbeirLanguageDataset(
-    #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
+    #     query_data_path="/mnt/tidalfs-hssh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
     #     cand_pool_path=data_args.cand_pool_path,
     #     instructions_path=data_args.instructions_path,
     #     image_path_prefix=data_args.image_path_prefix,
@@ -270,15 +286,20 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = mbeir_dataset
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam3_dataset, dam0_dataset, imgdiff_dataset, vismin_dataset])
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, visdoc_dataset])
+    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset7, xhs_dataset, dam3_dataset, dam0_dataset, imgdiff_dataset, vismin_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset ,xhs_dataset])#, dam3_dataset, dam0_dataset, imgdiff_dataset, vismin_dataset])
+    # train_dataset = imgdiff_dataset
+    # train_dataset = vismin_dataset
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset,copali_ds, visdoc_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
-    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
-    
+    # train_dataset = mbeir_dataset
+
     eval_dataset = None
     training_args.eval_strategy = "no"
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 100
+    training_args.save_total_limit = 1
     # training_args.resume_from_checkpoint=True
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](

@@ -1,9 +1,9 @@
 PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 NCCL_DEBUG=INFO
 NUM_GPUS=8
-NNODES=3
+NNODES=1
 NODE_RANK=${1:-0}
-MASTER_ADDR="10.204.73.49"
+MASTER_ADDR="10.204.73.190"
 # MASTER_ADDR="0.0.0.0"
 MASTER_PORT=29508
 
@@ -22,15 +22,22 @@ DATASET_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
-INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
+# INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv. # lamra fgmb ablation 的版本
+INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions_box.tsv # lamra fgmb ablation 的版本
 
 # MODEL_LOCAL_PATH=${2:-"../dam-qwen2/checkpoints/LamRA-Ret-2b-Pretrained-merged"}
 # MODEL_LOCAL_PATH=${2:-"./tmp_ckpts/Lemuir-Pretrained-merged+cplessvit"}
-# final 的layer-wise encoder版本
+# MODEL_LOCAL_PATH=${2:-"checkpoints/LamRA-Ret-2b-tune+cp2/"}
 # MODEL_LOCAL_PATH="checkpoints/Lemur_7B_Pretrain_585ktxt_enc"
+
+# final 的encoder版本
+# MODEL_LOCAL_PATH="checkpoints/Lemur_7B_Pretrain_585ktxt_nocausal_enc"
 
 # final的dam版本
 # MODEL_LOCAL_PATH="checkpoints/Lemur_7B_Pretrain_585ktxt_final"
+
+# lamra fgmb ablation 的版本
+MODEL_LOCAL_PATH="/mnt/tidalfs-hssh01/usr/liangxun/ICLR26/LamRA/checkpoints/LamRA-repli-Pretrained"
 
 TRAIN_VISION_ENCODER=False                              
 USE_VISION_LORA=False                                  
@@ -43,10 +50,14 @@ LORA_ALPHA=256
 # RUN_ID=${1:-qwen2-vl-2b_Lemur-2b_tune}
 # RUN_ID=${MODEL_ID}_Lemur_585ktxt_tune_stage2-largebs
 # RUN_ID=${MODEL_ID}_Lemur_585ktxt_final_tune_stage2-largebs
+# RUN_ID=${MODEL_ID}_abla_vpt_585ktxt_tune_stage2-largebs
+RUN_ID=${MODEL_ID}_abla_lamra_tune_fgmb16gpu-largebs # lamra fgmb ablation 的版本
  
 
-DS_STAGE=zero2
-PER_DEVICE_BATCH_SIZE=46
+# DS_STAGE=zero2
+# PER_DEVICE_BATCH_SIZE=40
+DS_STAGE=zero3
+PER_DEVICE_BATCH_SIZE=60 # lamra fgmb ablation 的版本
 GRAD_ACCUM=1                             
 NUM_EPOCHS=1                                         
 
@@ -94,4 +105,5 @@ torchrun $DISTRIBUTED_ARGS train/train_lemuir.py \
     --model_local_path $MODEL_LOCAL_PATH \
     --image_path_prefix $IMAGE_PATH_PREFIX \
     --use_flash_attn True \
+    # --nocausal_attn \
     $@

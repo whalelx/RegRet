@@ -519,13 +519,15 @@ def process_vision_info_with_focal(
                 id_concat_crop.append(cnt+1)
                 multi_img_texts.append(i)
                 image_num_for_minibatch.extend([1,1])
+                cnt += 2
+            elif box_mode == "concat-lamra":
                 # for global vit models
-                # image_inputs.append(fetch_image(vision_info, box_op="none"))
-                # id_justfull.append(cnt)
-                # multi_img_texts.append(i)
-                # image_inputs.append(fetch_image(vision_info, box_op="crop"))
-                # id_justfull.append(cnt+1)
-                # image_num_for_minibatch.extend([1,1])
+                image_inputs.append(fetch_image(vision_info, box_op="none"))
+                id_justfull.append(cnt)
+                multi_img_texts.append(i)
+                image_inputs.append(fetch_image(vision_info, box_op="crop"))
+                id_justfull.append(cnt+1)
+                image_num_for_minibatch.extend([1,1])
                 cnt += 2
 
     id_dict = Id2Mask({

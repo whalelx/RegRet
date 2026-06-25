@@ -23,7 +23,7 @@ import glob
 from io import BytesIO
 
 # Constants for M-BEIR format
-ROOT_FS = "/mnt/tidal-alsh01/dataset/mmeb/"
+ROOT_FS = "/mnt/tidalfs-hssh01/dataset/mmeb/"
 ON_SERVER = True
 DOWNLOAD_IMAGE = False
 TRAIN = False
@@ -93,7 +93,7 @@ class QueryCandidate:
 class FileExtractor(ABC):
     """Abstract base class for extracting data from different dataset formats"""
     def __init__(self, samples_path: str, labels_path: str = "", 
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
                  top_k_poscand: int = 10,
@@ -118,6 +118,7 @@ class FileExtractor(ABC):
     
     def save_pil_image(self, pil_image: Image.Image, filename: str) -> bool:
         """Save PIL Image to local file"""
+        return
         try:
             if pil_image.mode != 'RGB':
                 pil_image = pil_image.convert('RGB')
@@ -134,7 +135,7 @@ class XHSNoteFileExtractor(FileExtractor):
     """Extractor for XHS note dataset format"""
 
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "xhs_data/note_data/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
@@ -229,7 +230,7 @@ class XHSGoodsFileExtractor(FileExtractor):
     """Extractor for XHS goods dataset format"""
     
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "xhs_data/goods_data/from_20250401_to_20250407/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
@@ -326,12 +327,12 @@ class VisMinFileExtractor(FileExtractor):
     """Extractor for Hugging Face dataset format"""
     
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "hf_data/images",
                  samples_for_test_up: int = 1000,
                  samples_for_test_low: int = 0,
                  top_k_poscand: int = 10,
-                 cache_dir: Optional[str] = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset",
+                 cache_dir: Optional[str] = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset",
                  num_proc: int = 16,
                  mode: str = 'test',
                  skip_samples: int = 0,
@@ -526,12 +527,12 @@ class VisMinFileExtractor(FileExtractor):
 
 class VisMinTrainFileExtractor(VisMinFileExtractor):
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "hf_data/images",
                  samples_for_test_up: int = 10000,
                  samples_for_test_low: int = 0,
                  top_k_poscand: int = 10,
-                 cache_dir: Optional[str] = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset",
+                 cache_dir: Optional[str] = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset",
                  num_proc: int = 16,
                  skip_samples: int = 0, **kwargs):
         super().__init__(samples_path, labels_path, root_fs, image_subdir, samples_for_test_up, samples_for_test_low, top_k_poscand, cache_dir, num_proc, mode = 'train', skip_samples=skip_samples)
@@ -549,13 +550,13 @@ class DamT3FileExtractor(FileExtractor):
     """Extractor for DAM (Describe Anything Model) dataset format"""
     
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "dam_data/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
                  top_k_poscand: int = 10,
                  mode: str = 'draw',  # 'crop' or 'draw' mode from DAM dataset
-                 cache_dir: Optional[str] = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset",
+                 cache_dir: Optional[str] = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset",
                  skip_samples: int = 0,
                  **kwargs):
         super().__init__(samples_path, labels_path, root_fs, samples_for_test_up, samples_for_test_low, top_k_poscand, skip_samples)
@@ -684,13 +685,13 @@ class DamT3FileExtractor(FileExtractor):
 class DamT0FileExtractor(DamT3FileExtractor):
     """Extractor for DAM T0 t2i dataset format"""
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "dam_data/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
                  top_k_poscand: int = 10,
                  mode: str = 'draw',  # 'crop' or 'draw' mode from DAM dataset
-                 cache_dir: Optional[str] = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset",
+                 cache_dir: Optional[str] = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset",
                  skip_samples: int = 0,
                  **kwargs):
         super().__init__(samples_path, labels_path, root_fs, image_subdir, samples_for_test_up, samples_for_test_low, top_k_poscand, mode, cache_dir, skip_samples)
@@ -720,12 +721,12 @@ class FgclipT3FileExtractor(DamT3FileExtractor):
     """Extractor for FGCLIP dataset format, similar to DamT3FileExtractor"""
     
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "fgclip_data/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
                  top_k_poscand: int = 10,
-                 cache_dir: Optional[str] = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset",
+                 cache_dir: Optional[str] = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset",
                  use_dam: bool = False,
                  skip_samples: int = 0, **kwargs):
         super().__init__(samples_path, labels_path, root_fs, image_subdir, samples_for_test_up, samples_for_test_low, top_k_poscand, 'draw', cache_dir, skip_samples)
@@ -828,12 +829,12 @@ class FgclipT0FileExtractor(FgclipT3FileExtractor):
     """Extractor for FGCLIP dataset format, similar to DamT3FileExtractor"""
     
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "fgclip_data/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
                  top_k_poscand: int = 10,
-                 cache_dir: Optional[str] = "/mnt/tidal-alsh01/dataset/mmeb/.cache/huggingface/dataset",
+                 cache_dir: Optional[str] = "/mnt/tidalfs-hssh01/dataset/mmeb/.cache/huggingface/dataset",
                  use_dam: bool = False,
                  skip_samples: int = 0, **kwargs):
         super().__init__(samples_path, labels_path, root_fs, image_subdir, samples_for_test_up, samples_for_test_low, top_k_poscand, cache_dir, use_dam, skip_samples)
@@ -863,7 +864,7 @@ class ImgDiffFileExtractor(FileExtractor):
     """Extractor for ImgDiff dataset format (sharegpt format)"""
 
     def __init__(self, samples_path: str, labels_path: str = "",
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "Img-Diff/images",
                  samples_for_test_up: int = 5000,
                  samples_for_test_low: int = 1000,
@@ -936,7 +937,7 @@ class MBeirConverter:
                  dataset_id: str,
                  task_id: str,
                  dsname: str,
-                 root_fs: str = "/mnt/tidal-alsh01/dataset/mmeb/",
+                 root_fs: str = "/mnt/tidalfs-hssh01/dataset/mmeb/",
                  image_subdir: str = "xhs_data/goods_data/from_20250401_to_20250407/images"):
         self.DATASET_ID = dataset_id
         self.TASK_ID = task_id
@@ -1163,198 +1164,226 @@ if __name__ == "__main__":
     
     # args = parser.parse_args()
 
-    # xhs goods
-    generate_mbeir_files(
-        # args.filtered_samples_path, args.filtered_labels_path, args.output_dir,
-        "xhs_data/goods_data/from_20250401_to_20250407/from_20250401_to_20250407.json",
-        "",
-        "M-BEIR",
-        dsname="xhsgood",
-        cls = XHSGoodsFileExtractor,
-        dataset_id="10", task_id="4",
-        root_fs=ROOT_FS,
-        image_subdir="xhs_data/goods_data/from_20250401_to_20250407/images",
-        samples_for_test_up=5000, samples_for_test_low=1000, top_k_poscand=10,
-        skip_samples=0
-    )
-    # xhs notes
-    generate_mbeir_files(
-        "xhs_data/note_data/20250304/filtered_20250304_80K.json",
-        "xhs_data/note_data/20250304/20250304_label.json",
-        "M-BEIR",
-        dsname="xhsnote",
-        cls = XHSNoteFileExtractor,
-        dataset_id="11", task_id="4",
-        root_fs=ROOT_FS,
-        image_subdir="xhs_data/note_data/20250304/images",
-        samples_for_test_up=1000, samples_for_test_low=0, top_k_poscand=6,
-        skip_samples=0
-    )
+    # # xhs goods
+    # generate_mbeir_files(
+    #     # args.filtered_samples_path, args.filtered_labels_path, args.output_dir,
+    #     "xhs_data/goods_data/from_20250401_to_20250407/from_20250401_to_20250407.json",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="xhsgood",
+    #     cls = XHSGoodsFileExtractor,
+    #     dataset_id="10", task_id="4",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="xhs_data/goods_data/from_20250401_to_20250407/images",
+    #     samples_for_test_up=5000, samples_for_test_low=1000, top_k_poscand=10,
+    #     skip_samples=0
+    # )
+    # # xhs notes
+    # generate_mbeir_files(
+    #     "xhs_data/note_data/20250304/filtered_20250304_80K.json",
+    #     "xhs_data/note_data/20250304/20250304_label.json",
+    #     "M-BEIR",
+    #     dsname="xhsnote",
+    #     cls = XHSNoteFileExtractor,
+    #     dataset_id="11", task_id="4",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="xhs_data/note_data/20250304/images",
+    #     samples_for_test_up=1000, samples_for_test_low=0, top_k_poscand=6,
+    #     skip_samples=0
+    # )
 
-    # VisMin dataset
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/vismin/",
-        "",
-        "M-BEIR",
-        dsname="vismin",
-        cls = VisMinFileExtractor,
-        dataset_id="12", task_id="6",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/vismin_images",
-        samples_for_test_up=1394, samples_for_test_low=0, top_k_poscand=6,
-        skip_samples=0
-    )
+    # # VisMin dataset
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/vismin/",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="vismin",
+    #     cls = VisMinFileExtractor,
+    #     dataset_id="12", task_id="6",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/vismin_images",
+    #     samples_for_test_up=1394, samples_for_test_low=0, top_k_poscand=6,
+    #     skip_samples=0
+    # )
 
     # DAM dataset task3
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
+    #     "",
+    #     "M-BEIR",
+    #     dsname="dam",
+    #     cls = DamT3FileExtractor,
+    #     dataset_id="13", task_id="3",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/dam_images",
+    #     samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
+    #     skip_samples=0
+    # )
+    
+    # DAM dataset task3 clean
     generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
+        "/mnt/tidalfs-hssh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
         "",
         "M-BEIR",
         dsname="dam",
         cls = DamT3FileExtractor,
         dataset_id="13", task_id="3",
         root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/dam_images",
+        image_subdir="M-BEIR/mbeir_images/dam_images_clean",
         samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
-        skip_samples=0
-    )
-
-    # DAM dataset task0
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
-        "",
-        "M-BEIR", 
-        dsname="dam",
-        cls = DamT0FileExtractor,
-        dataset_id="13", task_id="0",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/dam_images",
-        samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
-        skip_samples=0 # BUG 应该截取 1500之后的一部分尝试的，这个东西互为镜像啊
-    )
-
-    # FGCLIP dataset task3
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/fg-clip",  # Path to FGCLIP dataset
-        "",
-        "M-BEIR",
-        dsname="fgclip",
-        cls = FgclipT3FileExtractor,
-        dataset_id="14", task_id="3",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/fgclip_images",
-        samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
-        use_dam=True,
-        skip_samples=0
-    )
-
-    # FGCLIP dataset task0
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/fg-clip",
-        "",
-        "M-BEIR",
-        dsname="fgclip",
-        cls = FgclipT0FileExtractor,
-        dataset_id="14", task_id="0",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/fgclip_images",
-        samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
-        use_dam=True,
         skip_samples=5000
     )
-    # VisMin dataset Train
-    TRAIN = True
-    # 原来的代码是hard-code取前5k构造test set, train set应该从5k开始
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/vismin/",
-        "",
-        "M-BEIR",
-        dsname="vismin",
-        cls = VisMinTrainFileExtractor,
-        dataset_id="12", task_id="6",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/vismin_images",
-        samples_for_test_up=150000, samples_for_test_low=0, top_k_poscand=6,
-        skip_samples=5000
-    )
-    TRAIN = False
 
-    # Img-Diff test
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/Img-Diff/img_diff_object_replacement.json",
-        "",
-        "M-BEIR",
-        dsname="imgdiff",
-        cls = ImgDiffFileExtractor,
-        dataset_id="15", task_id="6",
-        root_fs=ROOT_FS,
-        image_subdir="Img-Diff/filtered_new_edit_data",
-        samples_for_test_up=1300, samples_for_test_low=0, top_k_poscand=6,
-        skip_samples=0
-    )
-    # Img-Diff train
-    TRAIN = True
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/Img-Diff/img_diff_object_replacement.json",
-        "",
-        "M-BEIR",
-        dsname="imgdiff",
-        cls = ImgDiffFileExtractor,
-        dataset_id="15", task_id="6",
-        root_fs=ROOT_FS,
-        image_subdir="Img-Diff/filtered_new_edit_data",
-        samples_for_test_up=30000, samples_for_test_low=0, top_k_poscand=6,
-        skip_samples=5000
-    )
-    TRAIN = False
+    # # DAM dataset task0
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
+    #     "",
+    #     "M-BEIR", 
+    #     dsname="dam",
+    #     cls = DamT0FileExtractor,
+    #     dataset_id="13", task_id="0",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/dam_images",
+    #     samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
+    #     skip_samples=0 # BUG 应该截取 1500之后的一部分尝试的，这个东西互为镜像啊
+    # )
 
-    # xhs notes train
-    TRAIN=True
-    generate_mbeir_files(
-        "xhs_data/note_data/20250304/filtered_20250304_80K.json",
-        "xhs_data/note_data/20250304/20250304_label.json",
-        "M-BEIR",
-        dsname="xhsnote",
-        cls = XHSNoteFileExtractor,
-        dataset_id="11", task_id="4",
-        root_fs=ROOT_FS,
-        image_subdir="xhs_data/note_data/20250304/images",
-        samples_for_test_up=70000, samples_for_test_low=0, top_k_poscand=6,
-        skip_samples=1000
-    )
-    TRAIN = False
+    # # FGCLIP dataset task3
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/fg-clip",  # Path to FGCLIP dataset
+    #     "",
+    #     "M-BEIR",
+    #     dsname="fgclip",
+    #     cls = FgclipT3FileExtractor,
+    #     dataset_id="14", task_id="3",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/fgclip_images",
+    #     samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
+    #     use_dam=True,
+    #     skip_samples=0
+    # )
+
+    # # FGCLIP dataset task0
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/fg-clip",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="fgclip",
+    #     cls = FgclipT0FileExtractor,
+    #     dataset_id="14", task_id="0",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/fgclip_images",
+    #     samples_for_test_up=1500, samples_for_test_low=0, top_k_poscand=1,
+    #     use_dam=True,
+    #     skip_samples=5000
+    # )
+    # # VisMin dataset Train
+    # TRAIN = True
+    # # 原来的代码是hard-code取前5k构造test set, train set应该从5k开始
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/vismin/",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="vismin",
+    #     cls = VisMinTrainFileExtractor,
+    #     dataset_id="12", task_id="6",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/vismin_images",
+    #     samples_for_test_up=150000, samples_for_test_low=0, top_k_poscand=6,
+    #     skip_samples=5000
+    # )
+    # TRAIN = False
+
+    # # Img-Diff test
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/Img-Diff/img_diff_object_replacement.json",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="imgdiff",
+    #     cls = ImgDiffFileExtractor,
+    #     dataset_id="15", task_id="6",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="Img-Diff/filtered_new_edit_data",
+    #     samples_for_test_up=1300, samples_for_test_low=0, top_k_poscand=6,
+    #     skip_samples=0
+    # )
+    # # Img-Diff train
+    # TRAIN = True
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/Img-Diff/img_diff_object_replacement.json",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="imgdiff",
+    #     cls = ImgDiffFileExtractor,
+    #     dataset_id="15", task_id="6",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="Img-Diff/filtered_new_edit_data",
+    #     samples_for_test_up=30000, samples_for_test_low=0, top_k_poscand=6,
+    #     skip_samples=5000
+    # )
+    # TRAIN = False
+
+    # # xhs notes train
+    # TRAIN=True
+    # generate_mbeir_files(
+    #     "xhs_data/note_data/20250304/filtered_20250304_80K.json",
+    #     "xhs_data/note_data/20250304/20250304_label.json",
+    #     "M-BEIR",
+    #     dsname="xhsnote",
+    #     cls = XHSNoteFileExtractor,
+    #     dataset_id="11", task_id="4",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="xhs_data/note_data/20250304/images",
+    #     samples_for_test_up=70000, samples_for_test_low=0, top_k_poscand=6,
+    #     skip_samples=1000
+    # )
+    # TRAIN = False
 
     # DAM dataset task3
-    TRAIN=True
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
-        "",
-        "M-BEIR",
-        dsname="dam",
-        cls = DamT3FileExtractor,
-        dataset_id="13", task_id="3",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/dam_images",
-        samples_for_test_up=30000, samples_for_test_low=0, top_k_poscand=1,
-        skip_samples=10000
-    )
-    TRAIN = False
+    # TRAIN=True
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
+    #     "",
+    #     "M-BEIR",
+    #     dsname="dam",
+    #     cls = DamT3FileExtractor,
+    #     dataset_id="13", task_id="3",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/dam_images",
+    #     samples_for_test_up=30000, samples_for_test_low=0, top_k_poscand=1,
+    #     skip_samples=10000
+    # )
+    # TRAIN = False
 
     # DAM dataset task0
-    TRAIN=True
-    generate_mbeir_files(
-        "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data",
-        "",
-        "M-BEIR", 
-        dsname="dam",
-        cls = DamT0FileExtractor,
-        dataset_id="13", task_id="0",
-        root_fs=ROOT_FS,
-        image_subdir="M-BEIR/mbeir_images/dam_images",
-        samples_for_test_up=30000, samples_for_test_low=0, top_k_poscand=1,
-        skip_samples=40000
-    )
-    TRAIN = False
+    # TRAIN=True
+    # generate_mbeir_files(
+    #     "/mnt/tidalfs-hssh01/dataset/mmeb/describe-anything-data",  # Path to DAM dataset
+    #     "",
+    #     "M-BEIR", 
+    #     dsname="dam",
+    #     cls = DamT0FileExtractor,
+    #     dataset_id="13", task_id="0",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="M-BEIR/mbeir_images/dam_images",
+    #     samples_for_test_up=30000, samples_for_test_low=0, top_k_poscand=1,
+    #     skip_samples=40000
+    # )
+    # TRAIN = False
+
+    # generate_mbeir_files(
+    #     # args.filtered_samples_path, args.filtered_labels_path, args.output_dir,
+    #     "xhs_data/goods_data/from_20250401_to_20250407/from_20250401_to_20250407.json",
+    #     "",
+    #     "M-BEIR",
+    #     dsname="xhsgood",
+    #     cls = XHSGoodsFileExtractor,
+    #     dataset_id="10", task_id="4",
+    #     root_fs=ROOT_FS,
+    #     image_subdir="xhs_data/goods_data/from_20250401_to_20250407/images",
+    #     samples_for_test_up=3500, samples_for_test_low=1000, top_k_poscand=10,
+    #     skip_samples=0
+    # )
 '''
 python3 dataset/xhs_datatools/xhs_to_mbeir_format.py
 '''

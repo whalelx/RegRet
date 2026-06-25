@@ -43,7 +43,7 @@ PER_DEVICE_BATCH_SIZE=8
 GRAD_ACCUM=1                                   
 NUM_EPOCHS=1       
 
-LR=1e-4
+LR= 1e-4
 MODEL_MAX_LEN=1024
 
 

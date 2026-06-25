@@ -202,13 +202,17 @@ def eval(args):
         cand_names = np.array([[unhash_did(candidate_ids[item]) for item in row] for row in index])
         query_names = [unhash_qid(item) for item in query_ids]
 
-
-        save_dir_name = "./LamRA_Ret_eval_results"
+        save_dir_name = args.save_dir
         if not os.path.exists(save_dir_name):
             os.makedirs(save_dir_name)
-        save_name = args.qrels_path.split('/')[-1].replace('_qrels.txt', '')
-        model_name = args.model_id.split('/')[-1]
-        save_name = f"{save_name}_{model_name}"
+        if args.save_name:
+            save_name = args.save_name
+            model_name = args.save_name
+        else:
+            save_name = args.qrels_path.split('/')[-1].replace('_qrels.txt', '')
+            model_name = args.model_id.split('/')[-1]
+            save_name = f"{save_name}_{model_name}"
+                
         # with open(f"{save_dir_name}/{save_name}_query_names.json", 'w') as f:
         #     json.dump(query_names, f, indent=2)
         # with open(f"{save_dir_name}/{save_name}_cand_names.json", 'w') as f:
@@ -240,7 +244,6 @@ def eval(args):
         for k in k_lists:
             print(f"recall_at_{k} = {sum(res[f'recall_{k}']) / len(res[f'recall_{k}'])}")
 
-        model_name = model_id.split('/')[-1]
         with open(f"{save_dir_name}/{model_name}_results.txt", 'a') as f:
             f.write(args.qrels_path + '\n')
             for k in k_lists:
@@ -258,6 +261,8 @@ if __name__ == "__main__":
     parser.add_argument('--model_id', type=str)
     parser.add_argument('--query_cand_pool_path', type=str)
     parser.add_argument('--image_path_prefix', type=str)
+    parser.add_argument('--save_dir', type=str, default='./LamRA_Ret_eval_results')
+    parser.add_argument('--save_name', type=str, default="")
 
     args = parser.parse_args()
     eval(args)
