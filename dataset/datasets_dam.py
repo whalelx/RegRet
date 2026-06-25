@@ -114,8 +114,8 @@ class DAMDataset(Dataset):
             {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": image, "box": box, "box_op": "crop"},
-                    {"type": "text", "text": f"\n{self.get_prompt()}"}
+                    # {"type": "image", "image": image, "box": box, "box_op": self.mode},
+                    {"type": "text", "text": f"Tell me who are you"}
                 ]
             },
             {

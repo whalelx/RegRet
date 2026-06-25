@@ -1,4 +1,4 @@
-NUM_GPUS=8
+NUM_GPUS=1
 NNODES=1
 NODE_RANK=0 # 1
 MASTER_ADDR="0.0.0.0"
@@ -20,13 +20,14 @@ DISTRIBUTED_ARGS="
 
 # arguments that are very likely to be changed
 # according to your own case
-MODEL_ID=${3:-"qwen2-vl-2b"}
+MODEL_ID=${3:-"qwen3-vl-2b"}
 DATASET_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb
 IMAGE_PATH_PREFIX=${DATASET_PATH}/M-BEIR
 QUERY_DATA_PATH=${IMAGE_PATH_PREFIX}/query/union_train/mbeir_union_up_train.jsonl
 CAND_POOL_PATH=${IMAGE_PATH_PREFIX}/cand_pool/global/mbeir_union_train_cand_pool.jsonl
 INSTRUCTIONS_PATH=${IMAGE_PATH_PREFIX}/instructions/query_instructions.tsv
-MODEL_LOCAL_PATH=${2:-"./checkpoints/Qwen2-VL-2B-cp"}
+MODEL_LOCAL_PATH=${2:-"/mnt/tidalfs-hssh01/dataset/mmeb/Qwen3-VL-2B-Instruct"}
+# MODEL_LOCAL_PATH=${2:-"/mnt/tidalfs-hssh01/dataset/ai_tradesearch/models/Qwen3-VL-8B-Instruct"}
 
 TRAIN_VISION_ENCODER=True                              
 USE_VISION_LORA=False                                  
@@ -36,9 +37,13 @@ USE_LORA=True
 Q_LORA=False                                           
 LORA_R=128                                                
 LORA_ALPHA=256                                           
-RUN_ID=${1:-${MODEL_ID}_DAM_vit_c+v+p_1e-4}
+# RUN_ID=${1:-${MODEL_ID}_DAM_cp_enc}
+# RUN_ID=${1:-${MODEL_ID}_DAM_cp2}
+# RUN_ID=${1:-${MODEL_ID}_DAM_cp_glbloc}
+# RUN_ID=${1:-${MODEL_ID}_DAM_cp_final_enc}
+RUN_ID=${1:-${MODEL_ID}_DAM_cp_final}
 
-DS_STAGE=zero3
+DS_STAGE=zero2
 PER_DEVICE_BATCH_SIZE=8
 GRAD_ACCUM=1                                   
 NUM_EPOCHS=1       
@@ -46,6 +51,7 @@ NUM_EPOCHS=1
 LR=1e-4
 MODEL_MAX_LEN=1024
 
+export LAYERWISE=1
 
 torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
     --model_id $MODEL_ID \
@@ -78,7 +84,7 @@ torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
     --tf32 True \
     --model_max_length $MODEL_MAX_LEN \
     --gradient_checkpointing True \
-    --dataloader_num_workers 4 \
+    --dataloader_num_workers 0 \
     --train_vision_encoder $TRAIN_VISION_ENCODER \
     --use_vision_lora $USE_VISION_LORA \
     --train_vision_projector $TRAIN_VISION_PROJECTOR \

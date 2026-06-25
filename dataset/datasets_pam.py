@@ -91,7 +91,7 @@ class PAMDataset(Dataset):
 
 if __name__ == "__main__":
     pam_dataset = PAMDataset(
-        data_path="/mnt/tidal-alsh01/dataset/mmeb/PAM-data/image-obj-caption/PamCOCO.jsonl",
+        data_path="/mnt/tidalfs-hssh01/dataset/mmeb/PAM-data/image-obj-caption/PamCOCO.jsonl",
         max_length=108000,
         mode = 'crop',
     )

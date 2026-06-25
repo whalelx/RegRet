@@ -6,7 +6,7 @@ DISTRIBUTED_ARGS="
     --rdzv_endpoint localhost:0
 "
 
-MODEL_ID=qwen2-vl-7b                                  
+MODEL_ID=qwen3-vl-2b                                  
 TRAIN_DATA_PATH=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb/datasets-for-simcse/nli_for_simcse.csv  # path to the training data csv file
 EVAL_DATA_PATH=None   
 
@@ -19,7 +19,7 @@ Q_LORA=False
 LORA_R=64                                               
 LORA_ALPHA=128                                           
 
-RUN_ID=${1:-${MODEL_ID}_LEMUIR_Pretrain-Qwen2VL}
+RUN_ID=${1:-${MODEL_ID}_RegRet_Pretrain-Qwen3VL}
 
 DS_STAGE=zero2                                       
 PER_DEVICE_BATCH_SIZE=72                               
@@ -29,10 +29,9 @@ NUM_EPOCHS=2
 LR=2e-4   # The training will be more stable under this learning rate
 # LR=4e-4 # This learning rate may result in unstable training; consider multiple attempts, lowering it, or using our provided checkpoint
 MODEL_MAX_LEN=1024                                  
-MODEL_LOCAL_PATH=${2:-/mnt/tidal-alsh01/dataset/mmeb/Qwen2-VL-2B-Instruct}
+MODEL_LOCAL_PATH=${2:-/mnt/tidalfs-hssh01/dataset/mmeb/Qwen3-VL-2B-Instruct}
 
 shift 3
-# --model_local_path checkpoints/qwen2_5-vl-7b_tune_llm \
 torchrun $DISTRIBUTED_ARGS train/train_nli.py \
     --model_id $MODEL_ID \
     --model_local_path $MODEL_LOCAL_PATH \

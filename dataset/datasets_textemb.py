@@ -10,7 +10,7 @@ class MSMarcoDataset(Dataset):
     """
 
     def __init__(self, 
-        dataset_path = "/mnt/tidal-alsh01/dataset/mmeb/text_embed/msmarco-msmarco-MiniLM-L6-v3/triplet",
+        dataset_path = "/mnt/tidalfs-hssh01/dataset/mmeb/text_embed/msmarco-msmarco-MiniLM-L6-v3/triplet",
         max_length = -1
     ) -> None:
         super(MSMarcoDataset, self).__init__()
@@ -64,7 +64,7 @@ class HotpotQADataset(MSMarcoDataset):
     """
 
     def __init__(self, 
-        dataset_path = "/mnt/tidal-alsh01/dataset/mmeb/text_embed/hotpotqa/triplet",
+        dataset_path = "/mnt/tidalfs-hssh01/dataset/mmeb/text_embed/hotpotqa/triplet",
         max_length = -1
     ) -> None:
         super(HotpotQADataset, self).__init__(dataset_path, max_length)
@@ -88,7 +88,7 @@ class NaturalQuestionsDataset(MSMarcoDataset):
     """
 
     def __init__(self, 
-        dataset_path = "/mnt/tidal-alsh01/dataset/mmeb/text_embed/natural-questions/pair",
+        dataset_path = "/mnt/tidalfs-hssh01/dataset/mmeb/text_embed/natural-questions/pair",
         max_length = -1
     ) -> None:
         super(NaturalQuestionsDataset, self).__init__(dataset_path, max_length)

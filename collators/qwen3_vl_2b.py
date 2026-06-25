@@ -4,11 +4,11 @@ import torch
 
 from . import register_collator
 from .base import BaseDataCollator
-from .qwen2_vision_process import process_vision_info, process_vision_info_with_focal
+from qwen_vl_utils import process_vision_info
 
 
-@register_collator("qwen2-vl-2b")
-class Qwen2VL2BDataCollator(BaseDataCollator):
+@register_collator("qwen3-vl-2b")
+class Qwen3VL2BDataCollator(BaseDataCollator):
     @property
     def PAD_TOKEN_ID(self) -> int:
         return self.tokenizer.pad_token_id
@@ -17,7 +17,8 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
         '''
         make sure it returns the combined grid_thw as the target, and pixel_values as the [full, focal].
         '''
-        
+        # new_messages = messages
+        # breakpoint()
         category_size = len(messages[0])
         if category_size == 3:
             has_hard_negative = True 
@@ -32,23 +33,23 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
                     new_messages.append(d)
                 else:
                     pass
-
-        image_inputs, id_dict = process_vision_info_with_focal(new_messages, box_op="crop")
+        image_inputs, id_dict = process_vision_info(new_messages, image_patch_size=16)
         video_inputs = None
 
         texts = [
-            self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=False)
+            self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
             for msg in new_messages
         ]
 
-        inputs, crop_or_concat_img_inputs = self.processor(
+        inputs = self.processor(
             text=texts,
             images=image_inputs,
             videos=video_inputs,
             padding=True,
             return_tensors="pt",
-            id_dict=id_dict,
-            replace_two_imgs=set(id_dict.multi_img_texts)
+            do_resize=False,
+            # id_dict=id_dict,
+            # replace_two_imgs=set(id_dict.multi_img_texts)
         )
 
         input_ids = inputs['input_ids']
@@ -60,25 +61,27 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
         else:
             attention_mask = None
 
-        # if 'pixel_values' in inputs:
-        #     pixel_values = inputs['pixel_values']
-        # else:
-        pixel_values = None
+        if 'pixel_values' in inputs:
+            pixel_values = inputs['pixel_values']
+        else:
+            pixel_values = None
 
         if 'image_grid_thw' in inputs:
             image_grid_thw = inputs['image_grid_thw']
         else:
-            image_grid_thw = None 
+            image_grid_thw = None
+
+        mm_token_type_ids = inputs.get('mm_token_type_ids', None)
 
         result = dict(
             input_ids=input_ids,
             attention_mask=attention_mask,
             pixel_values=pixel_values,
             image_grid_thw=image_grid_thw,
+            mm_token_type_ids=mm_token_type_ids,
             labels=labels,
-            has_hard_negative=has_hard_negative,
-            id_dict=id_dict,
+            # id_dict=id_dict,
         )
-        if crop_or_concat_img_inputs is not None:
-            result = result | crop_or_concat_img_inputs
+        # if crop_or_concat_img_inputs is not None:
+        #     result = result | crop_or_concat_img_inputs
         return result

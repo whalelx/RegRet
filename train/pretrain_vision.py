@@ -95,7 +95,7 @@ def train():
 
 
     # freeze certain params
-    vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["context_encoder"]
+    vision_encoder_keys = MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
     # if training_args.train_vision_encoder:
     #     vision_encoder_keys += MODULE_KEYWORDS[model_args.model_family_id]["vision_encoder"]
 
@@ -117,15 +117,15 @@ def train():
         if param.requires_grad:
             rank0_print(f"\t{name}")
 
-    param_cnt = sum(p.numel() for p in model.visual.context_layers.parameters() if p.requires_grad) / 1000000
-    rank0_print(f"context encoder extra params: {param_cnt}M")
+    # param_cnt = sum(p.numel() for p in model.visual.context_layers.parameters() if p.requires_grad) / 1000000
+    # rank0_print(f"context encoder extra params: {param_cnt}M")
 
     # load data
     rank0_print("Loading data...")
     dam_dataset = DAMDataset(
         data_path=data_args.dam_data_path,
         max_length=data_args.dam_max_samples,
-        mode = 'crop',
+        mode = 'none',
     )
     # fgclip_dataset = FGCLIPDataset(
     #     data_path=data_args.fgclip_data_path,

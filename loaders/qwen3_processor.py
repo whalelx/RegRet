@@ -1,4 +1,4 @@
-from transformers.models.qwen2_vl.processing_qwen2_vl import Qwen2VLProcessor
+from transformers.models.qwen3_vl.processing_qwen3_vl import Qwen3VLProcessor
 
 
 from typing import List, Optional, Union
@@ -7,25 +7,21 @@ from transformers.feature_extraction_utils import BatchFeature
 from transformers.processing_utils import ImagesKwargs, ProcessingKwargs
 import torch
 
-class Qwen2VLImagesKwargs(ImagesKwargs):
-    min_pixels: Optional[int]
-    max_pixels: Optional[int]
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
-
-
-class Qwen2VLProcessorKwargs(ProcessingKwargs, total=False):
-    images_kwargs: Qwen2VLImagesKwargs
+class Qwen3VLProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = {
         "text_kwargs": {
             "padding": False,
+            "return_token_type_ids": False,
+            "return_mm_token_type_ids": True,
         },
+        "videos_kwargs": {"return_metadata": True},
     }
 
-class LemuirProcessor(Qwen2VLProcessor):
-    def __init__(self, image_processor=None, tokenizer=None, chat_template=None, **kwargs):
-        super().__init__(image_processor, tokenizer, chat_template=chat_template, **kwargs)
+
+
+class RegRetQwen3Processor(Qwen3VLProcessor):
+    def __init__(self, image_processor=None, tokenizer=None, video_processor=None, chat_template=None, **kwargs):
+        super().__init__(image_processor, tokenizer, video_processor=video_processor, chat_template=chat_template, **kwargs)
 
     def __call__(
         self,
@@ -37,7 +33,7 @@ class LemuirProcessor(Qwen2VLProcessor):
         **kwargs,
     ):
         output_kwargs = self._merge_kwargs(
-            Qwen2VLProcessorKwargs,
+            Qwen3VLProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
@@ -45,7 +41,6 @@ class LemuirProcessor(Qwen2VLProcessor):
             crop_or_concat_img_inputs = self.get_images_by_group(images, id_dict, output_kwargs)
             image_inputs = self.image_processor(
                 images=self.get_images(images, id_dict), 
-                videos=None, 
                 **output_kwargs["images_kwargs"]
             )
             image_grid_thw = image_inputs["image_grid_thw"]
@@ -55,8 +50,12 @@ class LemuirProcessor(Qwen2VLProcessor):
             crop_or_concat_img_inputs = None
 
         if videos is not None:
-            videos_inputs = self.image_processor(images=None, videos=videos, **output_kwargs["videos_kwargs"])
+            videos_inputs = self.video_processor(videos=videos, **output_kwargs["videos_kwargs"])
             video_grid_thw = videos_inputs["video_grid_thw"]
+            if not kwargs.get("return_metadata"):
+                video_metadata = videos_inputs.pop("video_metadata")
+            else:
+                video_metadata = videos_inputs["video_metadata"]
         else:
             videos_inputs = {}
             video_grid_thw = None
@@ -64,6 +63,7 @@ class LemuirProcessor(Qwen2VLProcessor):
         if not isinstance(text, list):
             text = [text]
 
+        text = text.copy()  # below lines change text in-place
         if image_grid_thw is not None:
             merge_length = self.image_processor.merge_size**2
             index = 0
@@ -71,31 +71,35 @@ class LemuirProcessor(Qwen2VLProcessor):
                 while self.image_token in text[i]:
                     if i in replace_two_imgs:
                         text[i] = text[i].replace(
-                            self.image_token, "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length) + "<|vision_end|><|vision_start|>" + "<|placeholder|>" * (image_grid_thw[index+1].prod() // merge_length), 1
+                            self.image_token,
+                            "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length)
+                            + "<|vision_end|><|vision_start|>"
+                            + "<|placeholder|>" * (image_grid_thw[index + 1].prod() // merge_length),
+                            1,
                         )
                         index += 2
                     else:
                         text[i] = text[i].replace(
-                            self.image_token, "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length), 1
+                            self.image_token,
+                            "<|placeholder|>" * (image_grid_thw[index].prod() // merge_length),
+                            1,
                         )
                         index += 1
                 text[i] = text[i].replace("<|placeholder|>", self.image_token)
 
-        if video_grid_thw is not None:
-            merge_length = self.image_processor.merge_size**2
-            index = 0
-            for i in range(len(text)):
-                while self.video_token in text[i]:
-                    text[i] = text[i].replace(
-                        self.video_token, "<|placeholder|>" * (video_grid_thw[index].prod() // merge_length), 1
-                    )
-                    index += 1
-                text[i] = text[i].replace("<|placeholder|>", self.video_token)
-
+        return_tensors = output_kwargs["text_kwargs"].pop("return_tensors", None)
+        return_mm_token_type_ids = output_kwargs["text_kwargs"].pop("return_mm_token_type_ids", None)
         text_inputs = self.tokenizer(text, **output_kwargs["text_kwargs"])
+        self._check_special_mm_tokens(text, text_inputs, modalities=["image", "video"])
+
+        if return_mm_token_type_ids:
+            text_inputs["mm_token_type_ids"] = self.create_mm_token_type_ids(text_inputs["input_ids"])
         
-        return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}), crop_or_concat_img_inputs
-    
+        return (
+            BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}, tensor_type=return_tensors),
+            crop_or_concat_img_inputs,
+        )
+
     ### Stuff add by liangxun
     def get_images_by_group(self, images, id_dict, output_kwargs):
         inputs = {}
@@ -104,7 +108,7 @@ class LemuirProcessor(Qwen2VLProcessor):
             if len(ids) == 0:
                 continue
             cur_images = [images[i] for i in ids]
-            tmp = self.image_processor(images=cur_images, videos=None, **output_kwargs["images_kwargs"])
+            tmp = self.image_processor(images=cur_images, **output_kwargs["images_kwargs"])
             inputs[key+"_pixel_values"] = tmp.pixel_values
             # HACK TODO why image grid becomes float if it is not converted here?
             inputs[key+"_image_grid_thw"] = tmp.image_grid_thw.to(torch.int64) # HACK

@@ -8,5 +8,6 @@ def register_collator(name):
         return cls
     return register_collator_cls
 
-from .qwen2_vl_7b import Qwen2VL7BDataCollator
-from .qwen2_vl_2b import Qwen2VL2BDataCollator
+# from .qwen2_vl_7b import Qwen2VL7BDataCollator
+# from .qwen2_vl_2b import Qwen2VL2BDataCollator
+from .qwen3_vl_2b import Qwen3VL2BDataCollator

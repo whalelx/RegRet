@@ -57,7 +57,7 @@ class MbeirQueryDataCollator(BaseDataCollator):
 
         has_hard_negative = False 
 
-        return dict(
+        result = dict(
             input_ids=input_ids,
             attention_mask=attention_mask,
             pixel_values=pixel_values,
@@ -66,7 +66,10 @@ class MbeirQueryDataCollator(BaseDataCollator):
             has_hard_negative=has_hard_negative,
             qids=qids,
             id_dict=id_dict,
-        ) | crop_or_concat_img_inputs
+        )
+        if crop_or_concat_img_inputs is not None:
+            result = result | crop_or_concat_img_inputs
+        return result
 
 class MbeirCandidateDataCollator(BaseDataCollator):
     @property
@@ -121,7 +124,7 @@ class MbeirCandidateDataCollator(BaseDataCollator):
 
         has_hard_negative = False 
 
-        return dict(
+        result = dict(
             input_ids=input_ids,
             attention_mask=attention_mask,
             pixel_values=pixel_values,
@@ -130,4 +133,7 @@ class MbeirCandidateDataCollator(BaseDataCollator):
             has_hard_negative=has_hard_negative,
             dids=dids,
             id_dict=id_dict,
-        ) | crop_or_concat_img_inputs
+        )
+        if crop_or_concat_img_inputs is not None:
+            result = result | crop_or_concat_img_inputs
+        return result

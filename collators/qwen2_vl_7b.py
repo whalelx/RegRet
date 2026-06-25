@@ -70,7 +70,7 @@ class Qwen2VL7BDataCollator(BaseDataCollator):
         else:
             image_grid_thw = None 
 
-        return dict(
+        result = dict(
             input_ids=input_ids,
             attention_mask=attention_mask,
             pixel_values=pixel_values,
@@ -78,4 +78,7 @@ class Qwen2VL7BDataCollator(BaseDataCollator):
             labels=labels,
             has_hard_negative=has_hard_negative,
             id_dict=id_dict,
-        ) | crop_or_concat_img_inputs
+        )
+        if crop_or_concat_img_inputs is not None:
+            result = result | crop_or_concat_img_inputs
+        return result

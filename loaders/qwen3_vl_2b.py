@@ -1,0 +1,36 @@
+from typing import Tuple
+
+from transformers import AutoTokenizer, AutoProcessor, AutoModelForCausalLM
+
+from . import register_loader
+from .base import BaseModelLoader
+from models.qwen3_vl import Qwen3VLRetForConditionalGeneration
+from .qwen3_processor import RegRetQwen3Processor
+
+
+@register_loader("qwen3-vl-2b")
+class Qwen3VL2BModelLoader(BaseModelLoader):
+    def load(self, load_model: bool = True, pretrain=True) -> Tuple[AutoModelForCausalLM, AutoTokenizer, None]:
+        if load_model and pretrain:
+            model = Qwen3VLRetForConditionalGeneration.from_pretrained(
+                self.model_local_path, 
+                **self.loading_kwargs,
+            )
+
+        processor = AutoProcessor.from_pretrained(self.model_local_path)
+        tokenizer = processor.tokenizer 
+
+        self.add_embed_token(tokenizer, model)
+
+        return model, tokenizer, processor 
+
+    def add_embed_token(self, tokenizer, model, emb_token="<emb>"):
+        emb_tokens = [emb_token]
+        num_new_tokens = tokenizer.add_tokens(emb_tokens)
+        emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
+        model.config.emb_token_ids = emb_token_ids
+        if num_new_tokens == 0:  # if the emb is already in the tokenizer
+            return
+        else:
+            assert len(emb_tokens) == num_new_tokens, f"{len(emb_tokens)} not equals {num_new_tokens}"
+            model.resize_token_embeddings(len(tokenizer))

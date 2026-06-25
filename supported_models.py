@@ -6,18 +6,10 @@ from loaders import LOADERS
 
 
 MODULE_KEYWORDS: Dict[str, Dict[str, List]] = {
-    "qwen2-vl-7b": {
-        "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
-        "context_encoder": ["visual.context_layers", "visual.ctx_merger"],
-        "vision_projector": ["visual.merger"],
-        "llm": ["model"],
-        "llm_heads": ["lm_head","model.emb_head"],
-        "language": ["model","lm_head"]
-    },
-    "qwen2-vl-2b": {
+    "qwen3-vl-2b": {
         "vision_encoder": ["visual.patch_embed", "visual.rotary_pos_emb", "visual.blocks"],
         "vision_projector": ["visual.merger"],
-        "context_encoder": ["visual.context_layers","visual.ctx_merger"],
+        # "context_encoder": ["visual.context_layers","visual.ctx_merger"],
         "llm_heads": ["lm_head"],
         "llm": ["model"],
         "language": ["model","lm_head"]
@@ -37,16 +29,22 @@ def register_model(model_id: str, model_family_id: str, model_hf_path: str) -> N
 
 
 #=============================================================
-register_model(
-    model_id="qwen2-vl-7b",
-    model_family_id="qwen2-vl-7b",
-    model_hf_path="./checkpoints/hf_models/Qwen2-VL-7B-Instruct"
-)
+# register_model(
+#     model_id="qwen2-vl-7b",
+#     model_family_id="qwen2-vl-7b",
+#     model_hf_path="./checkpoints/hf_models/Qwen2-VL-7B-Instruct"
+# )
+
+# register_model(
+#     model_id="qwen2-vl-2b",
+#     model_family_id="qwen2-vl-2b",
+#     model_hf_path="./checkpoints/hf_models/Qwen2-VL-2B-Instruct"
+# )
 
 register_model(
-    model_id="qwen2-vl-2b",
-    model_family_id="qwen2-vl-2b",
-    model_hf_path="./checkpoints/hf_models/Qwen2-VL-2B-Instruct"
+    model_id="qwen3-vl-2b",
+    model_family_id="qwen3-vl-2b",
+    model_hf_path="./checkpoints/hf_models/Qwen3-VL-2B-Instruct"
 )
 
 # sanity check
