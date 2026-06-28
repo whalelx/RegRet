@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 # from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VisionTransformerPretrainedModel
-from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VisionTransformerPretrainedModel, Qwen2_5_VLVisionBlock, Qwen2RMSNorm, flash_attn_varlen_func
+from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VisionTransformerPretrainedModel,Qwen2_5_VLPatchMerger, Qwen2_5_VLVisionBlock, Qwen2RMSNorm, flash_attn_varlen_func
 from transformers.models.qwen2_5_vl.configuration_qwen2_5_vl import Qwen2_5_VLVisionConfig
 from transformers import AutoConfig, AutoModel, PretrainedConfig, PreTrainedModel
 from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLMLP  as Qwen2_5_ContextVisionMLP
@@ -194,11 +194,11 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
 
         nofocal_image_nums = focal_image_ids[0].item()
         context_thw = grid_thw[focal_image_ids, :]
-        context_token_nums = (grid_thw.prod(1).sum() - context_thw.prod(1).sum()).item()
+        nofocal_token_nums = (grid_thw.prod(1).sum() - context_thw.prod(1).sum()).item()
         if enc_dec_arch:
-            context_feature = [f[context_token_nums:] for f in full_image_feature_list]
+            context_feature = [f[nofocal_token_nums:] for f in full_image_feature_list]
         else:
-            context_feature = full_image_feature[context_token_nums:]
+            context_feature = full_image_feature[nofocal_token_nums:]
 
         cimage_features, cimage_winidx = self.extract_feature(
             focal_pixel_values,
@@ -208,13 +208,13 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
         )
         cimage_features = self.patch_merge(cimage_features, cimage_winidx)
 
-        full_image_feature = full_image_feature[:context_token_nums]
-        full_image_winidx, _ = self.get_window_index(grid_thw[:nofocal_image_nums])
+        full_image_feature = full_image_feature[:nofocal_token_nums]
         
         if full_image_feature.shape[0] == 0:
             return cimage_features
         else:
             # HACK suppose cimages are always behind the full images
+            full_image_winidx, _ = self.get_window_index(grid_thw[:nofocal_image_nums])
             full_image_feature = self.patch_merge(full_image_feature, full_image_winidx)
             final_image_feature = torch.cat([
                 full_image_feature,

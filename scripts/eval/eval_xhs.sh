@@ -5,7 +5,7 @@ IMAGE_PATH_PREFIX=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb/M-BEIR
 # MODEL_ID="./tmp_ckpts/dam_cvp"  # language
 # MODEL_ID="./tmp_ckpts/dam_globaldt"  # language
 # MODEL_ID="./tmp_ckpts/dam_cvp_global_nilpretrain"
-MODEL_ID="checkpoints/qwen2_5-vl-7b_dam_cvp_global_tune"
+MODEL_ID="../lemuir/tmp_ckpts/dam_cvp_fixwin_nilpretrain"
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_candelete"
 
 ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
