@@ -26,6 +26,8 @@ from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
+from dataset.datasets_vismin import VisMinDataset
+
 # from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
 from supported_models import MODULE_KEYWORDS
@@ -92,7 +94,7 @@ def train():
         use_flash_attn=training_args.use_flash_attn,
         device_map=device_map,
     )
-    model, tokenizer, processor = loader.load(pretrain=False)
+    model, tokenizer, processor = loader.load(pretrain=True)
     tokenizer.model_max_length = training_args.model_max_length
 
     # Set language loss weight from training arguments
@@ -190,13 +192,28 @@ def train():
         tokenizer=tokenizer,
     )
 
-    xhs_dataset = XHSDataset(
-        query_data_path=data_args.xhs_query_data_path,
-        cand_pool_path=data_args.xhs_cand_pool_path,
-        instructions_path=data_args.instructions_path,
-        image_path_prefix=data_args.image_path_prefix,
-        tokenizer=tokenizer 
+    # visdoc_dataset = VisRAGSynDataset(
+    #     max_length=200000
+    # )
+    # copali_ds = CopaliDataset()
+    
+    
+    
+    vismin_dataset = VisMinDataset(
+        query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_vismin_task6_train.jsonl"),
+        cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_vismin_task6_cand_pool.jsonl"),
+        instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+        image_path_prefix="",
+        tokenizer=tokenizer,
     )
+
+    # xhs_dataset = XHSDataset(
+    #     query_data_path=data_args.xhs_query_data_path,
+    #     cand_pool_path=data_args.xhs_cand_pool_path,
+    #     instructions_path=data_args.instructions_path,
+    #     image_path_prefix=data_args.image_path_prefix,
+    #     tokenizer=tokenizer 
+    # )
     # dam_dataset = DAMDataset(
     #     data_path=data_args.dam_data_path,
     #     max_length=data_args.dam_max_samples
@@ -215,14 +232,16 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
+    train_dataset = vismin_dataset #mbeir_dataset
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, visdoc_dataset])
+    # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
     training_args.save_strategy = "steps"
-    training_args.save_steps = 400
+    training_args.save_steps = 500
     training_args.save_total_limit = 1
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](

@@ -16,6 +16,14 @@ from accelerate import Accelerator
 import accelerate
 from tqdm import tqdm
 
+import debugpy
+def setup_debugpy(local_rank):
+    print(f"Debugger listening on rank {local_rank}")
+    debugpy.listen(("0.0.0.0", 9999))
+    print("Waiting for debugger attach...")
+    debugpy.wait_for_client()
+# setup_debugpy(0)
+
 DATASET_QUERY_NUM_UPPER_BOUND = 500000
 DATASET_CAN_NUM_UPPER_BOUND = 10000000
 
@@ -110,14 +118,14 @@ def eval(args):
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        assert len(emb_tokens) == num_new_tokens
+        # assert len(emb_tokens) == num_new_tokens
 
-        model.resize_token_embeddings(len(tokenizer))
+        # model.resize_token_embeddings(len(tokenizer))
 
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
 
-    # add_embed_token(tokenizer, model)
+    add_embed_token(tokenizer, model)
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 
@@ -202,7 +210,8 @@ def eval(args):
         query_names = [unhash_qid(item) for item in query_ids]
 
 
-        save_dir_name = "./LamRA_Ret_eval_results"
+        save_dir_name = "./LamRA_Ret_eval_results/"
+        # save_dir_name = "./LamRA_Ret_eval_results/lamraretcandel/"
         if not os.path.exists(save_dir_name):
             os.makedirs(save_dir_name)
         save_name = args.qrels_path.split('/')[-1].replace('_qrels.txt', '')

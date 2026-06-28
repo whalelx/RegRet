@@ -2,21 +2,22 @@
 # parameters: out/in/base-class
 # note to add ./checkpoints/ on the input path
 MODEL_ID=qwen2_5-vl-7b
-RUNNAME=${MODEL_ID}_DAM_ratiog
+RUNNAME=${MODEL_ID}_DAM_cp
 STARTCKPT=./checkpoints/Qwen2.5-VL-7B-Dam
 
 # stage 1
-bash scripts/focal/vision_pretrain.sh ${RUNNAME}_stage1 ${STARTCKPT} ${MODEL_ID}
+# bash scripts/focal/vision_pretrain.sh ${RUNNAME}_stage1 ${STARTCKPT} ${MODEL_ID}
 # stage 2
-bash scripts/focal/train_vllm.sh ${RUNNAME}_stage2 ./checkpoints/${RUNNAME}_stage1 ${MODEL_ID}
-# stage 3
-bash scripts/lemuir/pretrain.sh ${RUNNAME}_stage3 ./checkpoints/${RUNNAME}_stage2 ${MODEL_ID}
+# bash scripts/focal/train_vllm.sh ${RUNNAME}_stage2 ./checkpoints/${RUNNAME}_stage1 ${MODEL_ID}
+# # stage 3
+# bash scripts/lemuir/pretrain.sh ${RUNNAME}_stage3 ./checkpoints/${RUNNAME}_stage2 ${MODEL_ID}
 
-# stage 3.5
-bash scripts/lemuir/merge_lora.sh ./checkpoints/${RUNNAME}_stage3-5 ./checkpoints/${RUNNAME}_stage3
+# # stage 3.5
+# bash scripts/lemuir/merge_lora.sh ./checkpoints/${RUNNAME}_stage3-5 ./checkpoints/${RUNNAME}_stage3
+# python scripts/focal/merge_dam_lamra.py
 
 # stage 4
-bash scripts/lemuir/finetune.sh ${RUNNAME}_stage4 ./checkpoints/${RUNNAME}_stage3-5 ${MODEL_ID}
+# bash scripts/lemuir/finetune.sh ${RUNNAME}_stage4 ./checkpoints/${RUNNAME}_stage3 ${MODEL_ID}
 
 # 评估
 bash scripts/eval/eval_mbeir.sh ./checkpoints/${RUNNAME}_stage4

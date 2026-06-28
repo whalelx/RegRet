@@ -10,7 +10,7 @@ from transformers.models.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
 import torch
 import copy
 
-save_dir = "./checkpoints/Qwen2.5-VL-7B-Dam"
+save_dir = "./checkpoints/Qwen2.5-VL-7B-cp"
 
 base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained("Qwen/Qwen2.5-VL-7B-Instruct",low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 # base_model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(save_dir,low_cpu_mem_usage=False,  device_map={"": 0},  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)

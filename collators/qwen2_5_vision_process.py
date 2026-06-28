@@ -432,9 +432,16 @@ def process_vision_info_with_focal(
                 image_nofocal.append(fetch_image(vision_info, box_op="none"))
                 id_nofocal.append(i)
             else:
-                image_focal_crop.append(fetch_image(vision_info, box_op="crop"))
-                image_focal_full.append(fetch_image(vision_info, box_op="none"))
-                id_focal.append(i)
+                # image_focal_crop.append(fetch_image(vision_info, box_op="crop"))
+                # image_focal_full.append(fetch_image(vision_info, box_op="none"))
+                # id_focal.append(i)
+
+                # image_nofocal.append(fetch_image(vision_info, box_op="draw"))
+                # id_nofocal.append(i)
+
+                box_op=vision_info.get("box_op", "none")
+                image_nofocal.append(fetch_image(vision_info, box_op=box_op))
+                id_nofocal.append(i)
     resort_id = id_nofocal+id_focal
     other_id = [i for i in range(batchsz) if i not in resort_id]
     resort_id = resort_id + other_id

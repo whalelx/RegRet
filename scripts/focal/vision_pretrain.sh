@@ -39,7 +39,7 @@ LORA_ALPHA=256
 RUN_ID=${1:-${MODEL_ID}_DAM_vit_c+v+p_1e-4}
 
 DS_STAGE=zero3
-PER_DEVICE_BATCH_SIZE=6
+PER_DEVICE_BATCH_SIZE=5
 GRAD_ACCUM=1                                   
 NUM_EPOCHS=1       
 
@@ -95,4 +95,4 @@ torchrun $DISTRIBUTED_ARGS train/pretrain_vision.py \
     --use_flash_attn True \
     --layer_lr_decay $LAYER_LR_DECAY \
     --scale_ratio $SCALE_RATIO \
-    --layer_match_patterns "model\.visual\.blocks\.(\d+)" "model\.visual\.merger"
+    --layer_match_patterns "visual\.blocks\.(\d+)" "visual\.merger"

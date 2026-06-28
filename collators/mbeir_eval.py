@@ -27,7 +27,9 @@ class MbeirQueryDataCollator(BaseDataCollator):
         ]
 
         text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
-        if not text_only:
+        resort_id = [i for i in range(len(resort_id)//2)]
+
+        if not text_only: # TODO 为拼接图片搞的
             texts = [texts[i] for i in resort_id]
 
         inputs = self.processor(
@@ -128,7 +130,9 @@ class MbeirCandidateDataCollator(BaseDataCollator):
             for msg in new_messages
         ]
         text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
-        if not text_only:
+        resort_id = [i for i in range(len(resort_id)//2)]
+
+        if not text_only: # TODO 为拼接图片搞的
             texts = [texts[i] for i in resort_id]
 
         # inputs = self.processor(

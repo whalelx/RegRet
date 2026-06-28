@@ -72,6 +72,7 @@ class GroupBatchSampler(BatchSampler):
                 batch = []
 
 ######### trainer #########
+from transformers.trainer import is_sagemaker_mp_enabled
 
 class GroupLRTrainer(Trainer):
     def create_optimizer(self):
@@ -91,6 +92,7 @@ class GroupLRTrainer(Trainer):
         """
         Create optimizer with layer-wise learning rate decay.
         """
+        opt_model = self.model_wrapped if is_sagemaker_mp_enabled() else self.model
         base_lr = self.args.learning_rate
         layer_decay = getattr(self.args, 'layer_lr_decay', 1.0)
         layer_match_patterns = getattr(self.args, 'layer_match_patterns', [])
@@ -137,7 +139,7 @@ class GroupLRTrainer(Trainer):
                 max_layer = max_layer_dict[pattern_idx]
                 group_lr = base_lr * scale_ratio * (layer_decay ** (max_layer - lid))
             elif group.startswith('merger'):
-                group_lr = base_lr * scale_ratio * (layer_decay ** (max_layer - 1))  # Last layer LR
+                group_lr = base_lr * scale_ratio # Last layer LR
             else:
                 group_lr = base_lr
 
@@ -178,30 +180,34 @@ class GroupLRTrainer(Trainer):
                     "param_names": no_decay_names_list,
                 })
 
-        # Log parameter group details
-        summary_lines = []
-        N = len(group_settings_list)
-        head, tail = 6, 3
-        param_head, param_tail = 3, 3
+        # # Log parameter group details
+        # summary_lines = []
+        # N = len(group_settings_list)
+        # head, tail = 6, 3
+        # param_head, param_tail = 3, 3
 
-        for i in list(range(min(head, N))) + (['...'] if N > head + tail else []) + list(range(max(N-tail, head), N)):
-            if i == '...':
-                summary_lines.append(f"    ... (omitting {N-head-tail} groups) ...")
-                continue
-            gs = group_settings_list[i]
-            line = (
-                f"param_group {i}: group={gs['group']}, lr={gs['lr']:.4e}, "
-                f"weight_decay={gs['weight_decay']}, num_params={len(gs['param_names'])}"
-            )
-            summary_lines.append(line)
-            names = gs['param_names']
-            preview_names = names[:param_head] + ['...'] + names[-param_tail:] if len(names) > param_head + param_tail else names
-            summary_lines.append(f"    params: {preview_names}")
+        # for i in list(range(min(head, N))) + (['...'] if N > head + tail else []) + list(range(max(N-tail, head), N)):
+        #     if i == '...':
+        #         summary_lines.append(f"    ... (omitting {N-head-tail} groups) ...")
+        #         continue
+        #     gs = group_settings_list[i]
+        #     line = (
+        #         f"param_group {i}: group={gs['group']}, lr={gs['lr']:.4e}, "
+        #         f"weight_decay={gs['weight_decay']}, num_params={len(gs['param_names'])}"
+        #     )
+        #     summary_lines.append(line)
+        #     names = gs['param_names']
+        #     preview_names = names[:param_head] + ['...'] + names[-param_tail:] if len(names) > param_head + param_tail else names
+        #     summary_lines.append(f"    params: {preview_names}")
 
-        logger.info("LayerDecayOptimizer param_groups detail:\n" + "\n".join(summary_lines))
+        # logger.info("LayerDecayOptimizer param_groups detail:\n" + "\n".join(summary_lines))
 
-        optim_class, optim_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
-        return optim_class(param_groups, **optim_kwargs)
+        optimizer_cls, optimizer_kwargs = self.get_optimizer_cls_and_kwargs(self.args, opt_model)
+        optimizer = optimizer_cls(param_groups, **optimizer_kwargs)
+        if is_sagemaker_mp_enabled():
+            if is_sagemaker_mp_enabled():
+                optimizer = smp.DistributedOptimizer(optimizer)
+        return optimizer
 
 class CustomTrainer(GroupLRTrainer):
     def __init__(self, extra_losses: List[str] = None, language_ds_startidx: int = 2, **kwargs):

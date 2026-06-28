@@ -171,18 +171,20 @@ def train():
         processor=processor,
     )
     training_args.save_strategy = "steps"
-    training_args.save_steps = 1000
-    training_args.save_total_limit = 1
+    training_args.save_steps = 2000
+    training_args.save_total_limit = 4
     
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = GroupLRTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         data_collator=data_collator,
         train_dataset=dam_dataset,
+        # language_ds_startidx=1
     )
     
     trainer.train()
+    # trainer.train(resume_from_checkpoint=True)
     trainer.save_state()
 
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=output_dir)
