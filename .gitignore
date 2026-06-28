@@ -17,3 +17,6 @@ mbeir_rerank_files/
 .ipynb_checkpoints/
 .vscode
 mmeb_eval_results/
+
+profiling/**
+noise

@@ -15,7 +15,7 @@ from collators.qwen2_vision_process import process_vision_info_with_focal
 # ──────────────────────────────────────────────
 # 配置
 # ──────────────────────────────────────────────
-MODEL_ID = "code-kunkun/LamRA-Ret"   # 可替换为你本地微调后的模型路径
+MODEL_ID = "checkpoints/qwen2-vl-7b_Lemur_585ktxt_tune_stage2-largebs"   # 可替换为你本地微调后的模型路径
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.bfloat16
 
@@ -24,11 +24,12 @@ DTYPE = torch.bfloat16
 # ──────────────────────────────────────────────
 model = Qwen2VLRetForConditionalGeneration.from_pretrained(
     MODEL_ID,
-    torch_dtype=DTYPE,
+    torch_dtype=torch.bfloat16,
+    attn_implementation="flash_attention_2", 
     low_cpu_mem_usage=True,
 ).to(DEVICE)
 
-processor = LemuirProcessor.from_pretrained(MODEL_ID)
+processor = LemuirProcessor.from_pretrained("./checkpoints/LamRA-Ret")
 tokenizer = processor.tokenizer
 tokenizer.padding_side = "left"
 
@@ -120,17 +121,15 @@ def encode(messages_list, box_op="crop"):
 
 
 # ──────────────────────────────────────────────
-# 构造示例消息
+# 构造示例消息：1 个文本查询 vs 2 张候选图片
 # ──────────────────────────────────────────────
 
-# 1) 纯图像消息（无 box）
-image_message = [
+# 文本查询
+text_message = [
     {
         "role": "user",
         "content": [
-            {"type": "image", "image": "./demo.jpeg"},
-            {"type": "text", "text": "Find an image caption describing the following everyday image."},
-            {"type": "text", "text": "\nSummarize above image and sentence in one word: "},
+            {"type": "text", "text": "A silver kettle on a stand with an arched handle. Find me an everyday image that matches the given caption.\nSummarize above sentence in one word: "},
         ],
     },
     {
@@ -139,43 +138,30 @@ image_message = [
     },
 ]
 
-# 2) 图像消息 + box（box_op="crop" 会裁剪出 box 区域作为 focal 信息）
+# 候选图片 1（无 box）
+image_message1 = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "image": "./demo.jpeg", "box": [ 0.295,0.326, 0.372,0.479], "box_op": "crop"}, # POT
+            {"type": "text", "text": "\nSummarize above image in one word: "},
+        ],
+    },
+    {
+        "role": "assistant",
+        "content": [{"type": "text", "text": "<emb>."}],
+    },
+]
+
+# 候选图片 2（带 box，使用 crop 模式裁剪 focal 区域）
 # box 格式: [x1, y1, x2, y2]，坐标为 [0,1] 相对坐标
-image_message_with_box = [
+image_message2_with_box = [
     {
         "role": "user",
         "content": [
-            {"type": "image", "image": "./demo.jpeg",
-             "box": [0.1, 0.2, 0.6, 0.8], "box_op": "crop"},
-            {"type": "text", "text": "Find an image caption describing the following everyday image."},
-            {"type": "text", "text": "\nSummarize above image and sentence in one word: "},
-        ],
-    },
-    {
-        "role": "assistant",
-        "content": [{"type": "text", "text": "<emb>."}],
-    },
-]
-
-# 3) 纯文本消息
-text_message1 = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "text", "text": "a dog and a woman are playing on the bench.\nSummarize above sentence in one word: "},
-        ],
-    },
-    {
-        "role": "assistant",
-        "content": [{"type": "text", "text": "<emb>."}],
-    },
-]
-
-text_message2 = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "text", "text": "a dog.\nSummarize above sentence in one word: "},
+            {"type": "image", "image": "./demo.jpeg", "box": [0.165, 0.326, 0.423,0.910], "box_op": "crop"}, # OVEN
+            # {"type": "image", "image": "./demo.jpeg", "box": [0.165,0.542, 0.363,0.910], "box_op": "crop"}, # OVEN
+            {"type": "text", "text": "\nSummarize above image in one word: "},
         ],
     },
     {
@@ -188,24 +174,22 @@ text_message2 = [
 # ──────────────────────────────────────────────
 # 执行推理
 # ──────────────────────────────────────────────
-# 图像 embedding（无 box）
-image_embeds = encode([image_message], box_op="none")
-print("image_embeds shape:", image_embeds.shape)
-
-# 图像 embedding（带 box，使用 crop 模式）
-image_embeds_box = encode([image_message_with_box], box_op="crop")
-print("image_embeds_with_box shape:", image_embeds_box.shape)
-
 # 文本 embedding
-text_embeds = encode([text_message1, text_message2], box_op="none")
+text_embeds = encode([text_message], box_op="none")
 print("text_embeds shape:", text_embeds.shape)
 
-# 计算相似度
-print("\n=== Similarity (image vs texts) ===")
-print("image <-> text1:", (image_embeds @ text_embeds.t())[0, 0].item())
-print("image <-> text2:", (image_embeds @ text_embeds.t())[0, 1].item())
+# 图片 embedding（无 box）
+image1_embeds = encode([image_message1], box_op="none")
+print("image1_embeds shape:", image1_embeds.shape)
 
-if image_embeds_box is not None:
-    print("\n=== Similarity (image_with_box vs texts) ===")
-    print("image_box <-> text1:", (image_embeds_box @ text_embeds.t())[0, 0].item())
-    print("image_box <-> text2:", (image_embeds_box @ text_embeds.t())[0, 1].item())
+# 图片 embedding（带 box，crop 模式）
+image2_embeds = encode([image_message2_with_box], box_op="crop")
+print("image2_embeds (with box) shape:", image2_embeds.shape)
+
+# 拼接两张图片的 embedding，计算文本与每张图片的相似度
+image_embeds = torch.cat([image1_embeds, image2_embeds], dim=0)  # (2, dim)
+similarities = (text_embeds @ image_embeds.t()).squeeze(0)        # (2,)
+
+print("\n=== Similarity (text vs 2 images) ===")
+print(f"text <-> image1 (no box):    {similarities[0].item():.4f}")
+print(f"text <-> image2 (with box):  {similarities[1].item():.4f}")
