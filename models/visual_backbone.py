@@ -214,6 +214,26 @@ class Qwen2_5_ContextVisionTransformerPretrainedModel(Qwen2_5_VisionTransformerP
 
         cimage_features = self.ctx_merger(cimage_features)[torch.argsort(cimage_winidx), :]
 
+        ####
+        context_feature = self.merger(context_feature)
+        
+        # Calculate patch numbers for each image
+        full_patch_nums = (context_thw.prod(1) // 4).tolist()  # Divide by 4x4 for patch size
+        focal_patch_nums = (focal_image_grid_thw.prod(1) // 4).tolist()
+        
+        # Interleave features according to patch numbers
+        interleaved_features = []
+        for full_num, focal_num in zip(full_patch_nums, focal_patch_nums):
+            if full_num > 0:
+                interleaved_features.append(context_feature[:full_num])
+                context_feature = context_feature[full_num:]
+            if focal_num > 0:
+                interleaved_features.append(cimage_features[:focal_num])
+                cimage_features = cimage_features[focal_num:]
+                
+        interleaved_features = torch.cat(interleaved_features, dim=0)
+        return interleaved_features
+        ####
         full_image_feature = full_image_feature[~mask]
         if full_image_feature.shape[0] == 0:
             return cimage_features

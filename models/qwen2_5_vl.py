@@ -87,6 +87,7 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
             if pixel_values is not None:
                 pixel_values = pixel_values.type(self.visual.dtype)
                 image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw, focal_pixel_values=focal_pixel_values, focal_image_grid_thw=focal_image_grid_thw, focal_image_ids=focal_image_ids)
+                # breakpoint()
                 n_image_tokens = (input_ids == self.config.image_token_id).sum().item()
                 n_image_features = image_embeds.shape[0]
                 if n_image_tokens != n_image_features:
@@ -207,10 +208,10 @@ class Qwen2_5_VLRetForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
         contrastive_labels = labels[contrastive_indices] if labels is not None else None
 
         if contrastive_labels is not None and len(contrastive_indices)>0:
-            if self.config.use_emb_head:
-                contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
-            else:
-                contrastive_hidden_states = hidden_states[contrastive_indices]
+            # if self.config.use_emb_head:
+            contrastive_hidden_states = self.emb_head(hidden_states[contrastive_indices])
+            # else:
+            #     contrastive_hidden_states = hidden_states[contrastive_indices]
 
             if has_hard_negative:
                 contrastive_batch_size = len(contrastive_hidden_states) // 3

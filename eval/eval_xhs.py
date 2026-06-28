@@ -110,14 +110,14 @@ def eval(args):
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        assert len(emb_tokens) == num_new_tokens
-
-        model.resize_token_embeddings(len(tokenizer))
+        if len(emb_tokens) == num_new_tokens:
+            model.resize_token_embeddings(len(tokenizer))
 
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
 
-    # add_embed_token(tokenizer, model)
+    add_embed_token(tokenizer, model)
+    # model.config.nocausal_attn = args.nocausal_attn
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 
@@ -136,8 +136,8 @@ def eval(args):
     query_data_collator = MbeirQueryDataCollator(tokenizer=tokenizer, processor=processor)
     cand_data_collator = MbeirCandidateDataCollator(tokenizer=tokenizer, processor=processor)
     
-    query_dataloader = DataLoader(query_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=query_data_collator)
-    candidate_dataloader = DataLoader(cand_dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
+    query_dataloader = DataLoader(query_dataset, batch_size=96, num_workers=4, shuffle=False, collate_fn=query_data_collator)
+    candidate_dataloader = DataLoader(cand_dataset, batch_size=96, num_workers=4, shuffle=False, collate_fn=cand_data_collator)
 
     accelerator = Accelerator(mixed_precision='bf16')
     device = accelerator.device 
