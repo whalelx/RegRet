@@ -160,7 +160,8 @@ class QueryDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": None},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op":"crop"},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -191,7 +192,8 @@ class QueryDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": None},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op":"crop"},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -265,7 +267,8 @@ class CandidateDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": None},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op":"crop"},
                         {"type": "text", "text": f"{data_dict['txt']}\nSummarize above image and sentence in one word: "}
                     ]
                 },
@@ -296,7 +299,8 @@ class CandidateDataset(Dataset):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"]},
+                        {"type": "image", "image": data_dict['image'], "box": None},
+                        {"type": "image", "image": data_dict['image'], "box": data_dict["box"], "box_op":"crop"},
                         {"type": "text", "text": f"\nSummarize above image in one word: "}
                     ]
                 },
@@ -408,7 +412,7 @@ def _load_and_preprocess_image(query_img_path, image_path_prefix):
     if not query_img_path:
         return None
     full_query_img_path = os.path.join(image_path_prefix, query_img_path)
-    assert os.path.exists(full_query_img_path), f"Image Path {full_query_img_path} does not exist"
+    # assert os.path.exists(full_query_img_path), f"Image Path {full_query_img_path} does not exist"
     return full_query_img_path
 
 def _prepare_data_dict(txt, img_path, image_path_prefix,box=None):

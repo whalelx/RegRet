@@ -5,6 +5,7 @@ import torch
 from . import register_collator
 from .base import BaseDataCollator
 from .qwen2_vision_process import process_vision_info, process_vision_info_with_focal
+import copy
 
 
 @register_collator("qwen2-vl-2b")
@@ -37,19 +38,27 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
         image_nofocal, image_focal_full, image_focal_crop, resort_id = process_vision_info_with_focal(new_messages, box_op="crop")
         video_inputs = None
         image_inputs = image_nofocal + image_focal_crop
+        image_inputstemp  = [item for pair in zip(image_nofocal, image_focal_crop) for item in pair]
+
 
         texts = [
             self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=False)
             for msg in new_messages
         ]
-        texts = [texts[i] for i in resort_id]
+        tmptexts = copy.deepcopy(texts)
+        text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
+
+        resort_id = [i for i in range(len(resort_id)//2)]
+
+        if not text_only:
+            texts = [texts[i] for i in resort_id]
 
         resort_id = torch.tensor(resort_id)
         reverse_idx = torch.argsort(resort_id)
 
         inputs = self.processor(
             text=texts,
-            images=image_inputs,
+            images=image_inputstemp,
             videos=video_inputs,
             padding=True,
             return_tensors="pt",
@@ -63,6 +72,14 @@ class Qwen2VL2BDataCollator(BaseDataCollator):
             attention_mask = inputs['attention_mask']
         else:
             attention_mask = None 
+
+        inputs = self.processor(
+            text=tmptexts,
+            images=image_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+
         if 'pixel_values' in inputs:
             pixel_values = inputs['pixel_values']
         else:

@@ -3,6 +3,7 @@ import torch
 from .base import BaseDataCollator
 from .qwen2_vision_process import process_vision_info, process_vision_info_with_focal
 # from qwen_vl_utils import process_vision_info
+import copy
 
 
 class MbeirQueryDataCollator(BaseDataCollator):
@@ -21,19 +22,27 @@ class MbeirQueryDataCollator(BaseDataCollator):
         image_nofocal, image_focal_full, image_focal_crop, resort_id = process_vision_info_with_focal(new_messages, box_op="crop")
         video_inputs = None
         image_inputs = image_nofocal + image_focal_crop
+        image_inputstemp  = [item for pair in zip(image_nofocal, image_focal_crop) for item in pair]
+
 
         texts = [
             self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
             for msg in new_messages
         ]
-
+        tmptexts = copy.deepcopy(texts)
         text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
+
+        resort_id = [i for i in range(len(resort_id)//2)]
+
         if not text_only:
             texts = [texts[i] for i in resort_id]
 
+        resort_id = torch.tensor(resort_id)
+        reverse_idx = torch.argsort(resort_id)
+
         inputs = self.processor(
             text=texts,
-            images=image_inputs,
+            images=image_inputstemp,
             videos=video_inputs,
             padding=True,
             return_tensors="pt",
@@ -47,6 +56,14 @@ class MbeirQueryDataCollator(BaseDataCollator):
             attention_mask = inputs['attention_mask']
         else:
             attention_mask = None 
+
+        inputs = self.processor(
+            text=tmptexts,
+            images=image_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+
         if 'pixel_values' in inputs:
             pixel_values = inputs['pixel_values']
         else:
@@ -104,6 +121,7 @@ class MbeirQueryDataCollator(BaseDataCollator):
             focal_image_grid_thw=focal_crop_grid_thw,
             focal_image_ids=focal_image_ids,
             real_image_grid_thw=image_grid_thw,
+            reverse_idx = reverse_idx,
         )
 
 class MbeirCandidateDataCollator(BaseDataCollator):
@@ -123,15 +141,25 @@ class MbeirCandidateDataCollator(BaseDataCollator):
         image_nofocal, image_focal_full, image_focal_crop, resort_id = process_vision_info_with_focal(new_messages, box_op="crop")
         video_inputs = None
         image_inputs = image_nofocal + image_focal_crop
+        image_inputstemp  = [item for pair in zip(image_nofocal, image_focal_crop) for item in pair]
 
         texts = [
             self.processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
             for msg in new_messages
         ]
+        tmptexts = copy.deepcopy(texts)
         text_only  = len(image_nofocal)==0 and len(image_focal_full)==0
+        # resort_id = [item for i, item in enumerate(resort_id) if i % 2 == 0]
+        # print(resort_id)
+        # resort_id = resort_id[:(len(resort_id)//2)]
+        resort_id = [i for i in range(len(resort_id)//2)]
+        print("@@@",resort_id)
+
         if not text_only:
             texts = [texts[i] for i in resort_id]
-
+        
+        resort_id = torch.tensor(resort_id)
+        reverse_idx = torch.argsort(resort_id)
         # inputs = self.processor(
         #     text=texts,
         #     images=image_inputs,
@@ -141,14 +169,14 @@ class MbeirCandidateDataCollator(BaseDataCollator):
         # )
         inputs = self.processor(
             text=texts,
-            images=image_inputs,
+            images=image_inputstemp,
             videos=video_inputs,
             padding='longest',
             truncation=True,
             max_length=1024,
             return_tensors="pt",
         )
-
+        # breakpoint()
         input_ids = inputs['input_ids']
         labels = input_ids.clone()
         labels[labels == self.PAD_TOKEN_ID] = self.IGNORE_TOKEN_ID
@@ -157,6 +185,13 @@ class MbeirCandidateDataCollator(BaseDataCollator):
             attention_mask = inputs['attention_mask']
         else:
             attention_mask = None 
+        
+        inputs = self.processor(
+            text=tmptexts,
+            images=image_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
         if 'pixel_values' in inputs:
             pixel_values = inputs['pixel_values']
         else:
@@ -212,4 +247,5 @@ class MbeirCandidateDataCollator(BaseDataCollator):
             focal_image_grid_thw=focal_crop_grid_thw,
             focal_image_ids=focal_image_ids,
             real_image_grid_thw=image_grid_thw,
+            reverse_idx=reverse_idx
         )

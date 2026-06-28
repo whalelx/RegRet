@@ -26,7 +26,7 @@ from collators import COLLATORS
 from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.datasets_xhs import XHSDataset
 from dataset.datasets_dam import DAMDataset
-from dataset.datasets_visdoc import VisRAGSynDataset
+from dataset.datasets_vismin import VisMinDataset
 
 # from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
@@ -97,11 +97,8 @@ def train():
     model, tokenizer, processor = loader.load(pretrain=True)
     tokenizer.model_max_length = training_args.model_max_length
 
-    # Set config parameters from training arguments
+    # Set language loss weight from training arguments
     model.config.language_loss_weight = training_args.language_loss_weight
-    model.config.use_angle_sim = training_args.use_angle_sim
-    model.config.cos_sim_temp = training_args.cos_sim_temp
-    model.config.nocausal_attn = training_args.nocausal_attn
 
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
@@ -131,7 +128,7 @@ def train():
 
     # lora preparation
     llm_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm"]
-    # llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
+    llm_heads_keys = MODULE_KEYWORDS[model_args.model_family_id]["llm_heads"]
 
     if not (lora_args.use_lora or (training_args.train_vision_encoder and lora_args.use_vision_lora)):
         rank0_print("No LoRA enabled...")        
@@ -158,9 +155,9 @@ def train():
             rank0_print("Vision projector will be fully trained...")
             full_modules.extend(vision_projector_keys)
         
-        # # Always fully train the embedding head for contrastive learning
-        # rank0_print("Embedding/Language head will be fully trained...")
-        # full_modules.extend(llm_heads_keys)
+        # Always fully train the embedding head for contrastive learning
+        rank0_print("Embedding/Language head will be fully trained...")
+        full_modules.extend(llm_heads_keys)
 
         lora_config = LoraConfig(
             r=lora_args.lora_r,
@@ -198,6 +195,17 @@ def train():
     # visdoc_dataset = VisRAGSynDataset(
     #     max_length=200000
     # )
+    # copali_ds = CopaliDataset()
+    
+    
+    
+    vismin_dataset = VisMinDataset(
+        query_data_path=os.path.join(data_args.image_path_prefix, "query/train/mbeir_vismin_task6_train.jsonl"),
+        cand_pool_path=os.path.join(data_args.image_path_prefix, "cand_pool/local/mbeir_vismin_task6_cand_pool.jsonl"),
+        instructions_path=os.path.join(data_args.image_path_prefix, "instructions/query_instructions.tsv"),
+        image_path_prefix="",
+        tokenizer=tokenizer,
+    )
 
     # xhs_dataset = XHSDataset(
     #     query_data_path=data_args.xhs_query_data_path,
@@ -224,7 +232,7 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
-    train_dataset = mbeir_dataset
+    train_dataset = vismin_dataset #mbeir_dataset
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, visdoc_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])

@@ -279,6 +279,8 @@ class Qwen2VLRetForConditionalGeneration(Qwen2VLForConditionalGeneration):
             embed_features = contrastive_hidden_states[torch.arange(len(embed_indices)), embed_indices - 1] # (batch_size, embed_dim)
 
             if inference:
+                if reverse_idx is not None:
+                    embed_features = embed_features[reverse_idx.to(embed_features.device)]
                 if ids is not None:
                     return embed_features, ids
                 elif qids is not None or dids is not None:
