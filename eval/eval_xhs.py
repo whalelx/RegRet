@@ -5,7 +5,7 @@ import os
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 module_path = os.path.join(current_file_path, "../")
 sys.path.append(module_path)
-from models.qwen2_5_vl import Qwen2_5_VLRetForConditionalGeneration
+from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
 import torch 
 import argparse
 from dataset.datasets_mbeir import QueryDataset, CandidateDataset
@@ -93,7 +93,7 @@ def compute_recall_at_k_rewrite(relevant_docs, retrieved_indices, k):
 def eval(args):
     original_model_id = args.original_model_id
     model_id = args.model_id 
-    model = Qwen2_5_VLRetForConditionalGeneration.from_pretrained(
+    model = Qwen2VLRetForConditionalGeneration.from_pretrained(
         model_id, 
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2", 
@@ -110,15 +110,14 @@ def eval(args):
     def add_embed_token(tokenizer, model, emb_token="<emb>"):
         emb_tokens = [emb_token]
         num_new_tokens = tokenizer.add_tokens(emb_tokens)
-        assert len(emb_tokens) == num_new_tokens
-
-        model.resize_token_embeddings(len(tokenizer))
-
         emb_token_ids = tokenizer.convert_tokens_to_ids(emb_tokens)
         model.config.emb_token_ids = emb_token_ids
+        # assert len(emb_tokens) == num_new_tokens
 
-    # add_embed_token(tokenizer, model)
-    model.config.nocausal_attn = training_args.nocausal_attn
+        # model.resize_token_embeddings(len(tokenizer))
+
+
+    add_embed_token(tokenizer, model)
 
     query_dataset = QueryDataset(
         query_data_path=args.query_data_path, 

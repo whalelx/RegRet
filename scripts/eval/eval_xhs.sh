@@ -5,10 +5,13 @@ IMAGE_PATH_PREFIX=$(pwd | awk -F'/usr/' '{print $1}')/dataset/mmeb/M-BEIR
 # MODEL_ID="./tmp_ckpts/dam_cvp"  # language
 # MODEL_ID="./tmp_ckpts/dam_globaldt"  # language
 # MODEL_ID="./tmp_ckpts/dam_cvp_global_nilpretrain"
-MODEL_ID="checkpoints/qwen2_5-vl-7b_dam_cvp_global_tune"
+MODEL_ID=tmp_ckpts/dam_pretrainsub
+MODEL_ID="../LamRA/checkpoints/LamRA-repli-Pretrained"
+MODEL_ID=../LamRA/checkpoints/qwen2-vl-7b_LamRA_repli_tune-960bs
+MODEL_ID=../LamRA/checkpoints/LamRA-Ret
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_candelete"
 
-ORIGINAL_MODEL_ID=./checkpoints/LEMUIR_Pretrain
+ORIGINAL_MODEL_ID="../LamRA/checkpoints/LamRA-repli-Pretrained"
 
 # MODEL_ID="./tmp_ckpts/dam_pretrain+lamrallm"
 # MODEL_ID="checkpoints/qwen2_5-vl-7b_LEMUIR_tune_genloss0.3_mbeirlanguage"

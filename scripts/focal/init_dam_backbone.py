@@ -12,8 +12,8 @@ import copy
 
 size = "7"
 save_dir = f"./checkpoints/Qwen2-VL-{size}B-Dam"
-basemodel = f"Qwen/Qwen2-VL-{size}B-Instruct"
-
+# basemodel = f"/mnt/tidalfs-hssh01/dataset/mmeb/Qwen2-VL-{size}B-Instruct"
+basemodel = "/mnt/tidalfs-hssh01/usr/liangxun/.cache/huggingface/hub/models--Qwen--Qwen2-VL-7B-Instruct/snapshots/eed13092ef92e448dd6875b2a00151bd3f7db0ac"
 
 base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(basemodel,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 # base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(save_dir,low_cpu_mem_usage=False,  device_map={"": 0},  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)

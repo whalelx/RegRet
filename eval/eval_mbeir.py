@@ -77,7 +77,10 @@ def eval(args):
     # processor is not changed so we still load from the original model repo
     processor = AutoProcessor.from_pretrained(original_model_id)
 
-    tokenizer = processor.tokenizer 
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(original_model_id)
+
+    # tokenizer = processor.tokenizer 
     tokenizer.padding_side = 'left'
     tokenizer.model_max_length = args.model_max_length
 

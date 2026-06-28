@@ -1,9 +1,7 @@
-#! /usr/bin/bash
-# parameters: out/in/base-class
-# note to add ./checkpoints/ on the input path
-MODEL_ID=qwen2-vl-7b
-RUNNAME=${MODEL_ID}_DAM_ratiog
-STARTCKPT=./checkpoints/Qwen2-VL-7B-Dam
+# bash scripts/focal/vision_pretrain.sh
+bash scripts/focal/train_vllm.sh
+bash scripts/lemuir/pretrain.sh
+bash scripts/merge_lora.sh
 
 # stage 1
 bash scripts/focal/vision_pretrain.sh ${RUNNAME}_stage1 ${STARTCKPT} ${MODEL_ID}

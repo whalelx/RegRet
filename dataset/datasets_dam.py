@@ -140,7 +140,7 @@ class DAMDataset(Dataset):
 
 
 if __name__ == "__main__":
-    datapath = "/mnt/tidal-alsh01/dataset/mmeb/describe-anything-data"
+    datapath = "/mnt/tidalfs-hssh01/dataset/mmeb/describe-anything-data"
 
     ds = DAMDataset(datapath)
     breakpoint()

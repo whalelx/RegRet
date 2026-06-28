@@ -117,7 +117,8 @@ class FGCLIPDataset(Dataset):
         use_box_flag = self.use_bbox_ratio > 0 and random.random() < self.use_bbox_ratio
         # Process bbox info
         # Pass the box process for now
-        if use_box_flag and bbox_info and len(bbox_info) > 0:
+        if False: #bbox_info and len(bbox_info) > 0: # and random.random() > 0.833: # return 16% of the data as box, which is around 200k 
+
             # Select a random bbox annotation
             selected_bbox = random.choice(bbox_info)
             bbox = selected_bbox.get("bbox", [0, 0, 1., 1, -1])
