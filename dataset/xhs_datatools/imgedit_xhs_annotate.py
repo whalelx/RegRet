@@ -26,7 +26,7 @@ from tqdm import tqdm
 from dataset.xhs_datatools.xhs_to_mbeir_format import *  
 
 client = openai.AsyncOpenAI(
-    api_key="QSTd3138ffe4ce7dbb4248165b848605fc3",
+    api_key="",
     base_url="http://redservingapi.devops.xiaohongshu.com/v1"
 )
 
