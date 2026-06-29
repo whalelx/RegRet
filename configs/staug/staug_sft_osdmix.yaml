@@ -13,11 +13,11 @@ freefreeze_frozen_modules: visual
 deepspeed: examples/deepspeed/ds_z2_config.json
 
 ### dataset
-dataset: osdmix_large
+dataset: osdcot-vpt #osdmix #osdmix_cot
 template: qwen2_vl_vpt
 
 cutoff_len: 1024
-overwrite_cache: true
+overwrite_cache: false
 preprocessing_num_workers: 120
 
 # streaming: true # streaming
@@ -29,15 +29,15 @@ preprocessing_num_workers: 120
 #   dispatch_batches: false # streaming
 
 ### output
-output_dir: saves/staug/osdmixcot450k
+output_dir: saves/staug/osdcot+vpt
 logging_steps: 10
-save_steps: 200
+save_steps: 1000
 plot_loss: true
-overwrite_output_dir: true
+overwrite_output_dir: false
 # save_model_only: true
 
 ### train
-per_device_train_batch_size: 4
+per_device_train_batch_size: 2
 gradient_accumulation_steps: 4
 learning_rate: 2.0e-5
 num_train_epochs: 1.0

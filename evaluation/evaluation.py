@@ -30,12 +30,11 @@ units, and return valid JSON:
   "gt":   {"value": <number>, "unit": "<unit>"},
   "pred": {"value": <number>, "unit": "<unit>"}
 }
-
-Allowed units: meters, centimetres, millimetres, kilometres,
-inches, feet.  Ensure the JSON is the only output.
+If the answer is a range like '2-3 cms', set the return number as their average.
+Allowed units: meters, centimetres, millimetres,inches, feet.  Ensure the JSON is the only output.
 """
 
-REPO_PATH = "/root/VisualPerceptionToken"
+REPO_PATH = "/mnt/tidal-alsh01/usr/liangxun/STAUG"
 LLAMA_FACTORY_PATH = os.path.join(REPO_PATH, "LLaMA-Factory")
 os.chdir(LLAMA_FACTORY_PATH)
 
@@ -48,7 +47,7 @@ def check_question(meta_item, generated_item):
     meta_question = meta_item["messages"][0]["content"]
     meta_text = meta_question.replace("<image>", "").replace("\n", "")
     meta_text = meta_text.replace("Identify the region that can help you answer the question, and then answer the question","")
-    meta_text = meta_text.replace("Require additional perception features, and then answer the question","")
+    meta_text = meta_text.replace("Require additional perception featfures, and then answer the question","")
     meta_text = meta_text.replace("Answer the question using a single word or phrase","")
     meta_text = meta_text.replace("Answer with the option's letter from the given choices directly","")
     meta_text = meta_text.strip(". ")
@@ -207,7 +206,7 @@ def generate_sec_round_data_items(original_data_file_path, answer_1r_file_path):
     new_data = []
     finished_data = []
 
-    for i, (gt_item, generated_item) in enumerate(zip(data[:1000], answer_1r[:1000])):
+    for i, (gt_item, generated_item) in enumerate(zip(data[:3000], answer_1r[:3000])):
         geneated_answer = generated_item["predict"]
         do_dinoo = Action_tokens["dino"] in geneated_answer
         do_clip = Action_tokens["clip"] in geneated_answer
@@ -257,7 +256,7 @@ def generate_sec_round_data_items(original_data_file_path, answer_1r_file_path):
 def generate_first_round_data_items(original_data_file_path):
     data = json.load(open(original_data_file_path, "r"))
     new_data = []
-    for i, meta_item in enumerate(data[:1000]):
+    for i, meta_item in enumerate(data[:3000]):
         messages = [
             {
             "content": meta_item["messages"][0]["content"], 
@@ -298,6 +297,7 @@ def split_image_path(current_query_item):
 def extract_score(score_str):
     try:
         pattern = re.compile(r'[01]\.?\d*')
+        # pattern = re.compile(r'[Ss]core\s*i?s?\s*:\s*\**([0-9]+(?:\.[0-9]+)?)')
         match = pattern.search(score_str)
         score = float(match.group())
     except Exception as e:
@@ -318,6 +318,12 @@ if __name__ == "__main__":
         default=DEFAULT_BASE_YAML,
         help=f"Path to the base YAML configuration file (default: {DEFAULT_BASE_YAML})"
     )
+    parser.add_argument(
+        "--oner",
+        default=False,
+        action='store_true',
+        help=f"Whether to evaluate two rounds."
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -329,11 +335,36 @@ if __name__ == "__main__":
 
 
     datasets = [
-        #"srgpt_qualitive",
+        # "VSR_region_test",
+        # "whatsup",
+        # "srgpt_qualitive",
+        # "blink",
+        # "blink-nop",
+        # "blink_frame",
         # "qspatial",
+        # "robospatial-compatibility",
+        # "robospatial-configuration",
+        # "whatsup_newprompts",
+        "VSR_region_test_newprompt",
+        # "srgpt_qualitive_newprompts",
+        # "qspatial_newprompts",
+        # "robospatial-compatibility_newprompts",
+        # "robospatial-configuration_newprompts",
+        # "realworldqa",
+        # "realworldqa_newprompt",
+        # "SpatialEval",
+        # "treebench",
+        # "mmvp",
     ]
     # name = "rp-yu/Qwen2-VL-7b-VPT-CLIP"
     name = base_parameters["model_name_or_path"]
+    # name="spatialvlm"
+    # name="srgpt"
+    # name="gpt-4o"
+    # name = "Qwen/Qwen2-VL-7B-Instruct"
+    # name = "saves/staug/osdmixcot450k/checkpoint-3521"
+    # name = "saves/staug/osdmix450k/checkpoint-2450"
+    # name = "saves/staug/osdcot+vpt/checkpoint-9427"
     models = {
         name:{
             "num_inner_forward_run":2,
@@ -341,7 +372,8 @@ if __name__ == "__main__":
         },
     }
 
-    p_val,k_val = 0.1,10
+    # p_val,k_val = 0.1,10
+    p_val,k_val = 0.3,10
 
     for dataset_name in datasets:
         for model_path, model_para in models.items():
@@ -358,8 +390,9 @@ if __name__ == "__main__":
                 continue
 
             dataset_file = os.path.join(REPO_PATH,f"datasets/{dataset_name}.json")
-            image_resolution = 512
-            gpt_evaluation_batch_size = 8
+            # image_resolution = 512
+            image_resolution = 1024
+            gpt_evaluation_batch_size = 2
 
             # data 1r
             data_1r = generate_first_round_data_items(dataset_file)
@@ -370,11 +403,13 @@ if __name__ == "__main__":
             )
 
             # generation 1r
+            ######################################################################
             parameters_copy = copy.deepcopy(base_parameters)
             parameters_copy["output_dir"] = output_dir + "/round1"
             parameters_copy["model_name_or_path"] = model_path
             parameters_copy["eval_dataset"] = temp_dataset_name
             parameters_copy["image_resolution"] = image_resolution
+            parameters_copy["per_device_eval_batch_size"] = 4 # TODO treebench
             parameters_copy["top_k"] = k_val
             parameters_copy["top_p"] = p_val
             for k,v in model_para.items():
@@ -383,51 +418,74 @@ if __name__ == "__main__":
 
             log_file = output_dir+f"/round1/generation.log"
 
-            command = f"cd {LLAMA_FACTORY_PATH}; llamafactory-cli train "
-            for k,v in parameters_copy.items():
-                command = command + f"--{k} {v} "
-            command = command + f" > {log_file} 2>&1"
-            if not os.path.exists(output_dir + "/round1/generated_predictions.jsonl"):
-                subprocess.run(command, shell=True, check=True)
-
-            # data 2r
-            # read the output file
-            output_file_1r = output_dir + "/round1/generated_predictions.jsonl" 
-
-            data_2r, final_answers = generate_sec_round_data_items(dataset_file, output_file_1r)
-            if len(data_2r) == 0:
-                    pass
+            if model_path=="spatialvlm":
+                if not os.path.exists(output_dir + "/round1/generated_predictions.jsonl"):
+                    from eval_spatialvlm import batch_predict_from_sharegpt
+                    batch_predict_from_sharegpt(temp_dataset_file, output_dir + "/round1/generated_predictions.jsonl",batch_size=64)
+            elif model_path=="srgpt":
+                pass
+            elif model_path == "Qwen/Qwen2.5-VL-7B-Instruct":
+                if not os.path.exists(output_dir + "/round1/generated_predictions.jsonl"):
+                    from eval_spatialvlm import batch_predict_from_sharegpt
+                    batch_predict_from_sharegpt(temp_dataset_file, output_dir + "/round1/generated_predictions.jsonl", model_id=model_path, batch_size=64)
+            elif model_path in ("gpt-4o",):
+                from eval_gemini import batch_predict_from_sharegpt
+                import asyncio
+                asyncio.run(batch_predict_from_sharegpt(
+                    input_sharegpt_path=temp_dataset_file,
+                    output_jsonl_path=output_dir + "/round1/generated_predictions.jsonl",
+                    batch_size=32
+                ))
             else:
-                json.dump(
-                    data_2r, 
-                    open(temp_dataset_file, "w"),
-                    indent=2
-                )
-                # break
-                # generation 2r
-                parameters_copy = copy.deepcopy(base_parameters)
-                parameters_copy["output_dir"] = output_dir + "/round2"
-                parameters_copy["model_name_or_path"] = model_path
-                parameters_copy["eval_dataset"] = temp_dataset_name
-                parameters_copy["image_resolution"] = image_resolution
-                parameters_copy["top_k"] = k_val
-                parameters_copy["top_p"] = p_val
-                parameters_copy["per_device_eval_batch_size"] = 4
-                for k,v in model_para.items():
-                    if v is not None:
-                        parameters_copy[k] = v
-                        
-                log_file = output_dir+f"/round2/generation.log"
-
                 command = f"cd {LLAMA_FACTORY_PATH}; llamafactory-cli train "
                 for k,v in parameters_copy.items():
                     command = command + f"--{k} {v} "
                 command = command + f" > {log_file} 2>&1"
-                if not os.path.exists(output_dir + "/round2/generated_predictions.jsonl"):
+                if not os.path.exists(output_dir + "/round1/generated_predictions.jsonl"):
                     subprocess.run(command, shell=True, check=True)
+            ######################################################################
+            # data 2r
+            # read the output file
+            output_file_1r = output_dir + "/round1/generated_predictions.jsonl" 
+            if args.oner == False:
+                data_2r, final_answers = generate_sec_round_data_items(dataset_file, output_file_1r)
+                if len(data_2r) == 0:
+                        pass
+                else:
+                    json.dump(
+                        data_2r, 
+                        open(temp_dataset_file, "w"),
+                        indent=2
+                    )
+                    # break
+                    # generation 2r
+                    parameters_copy = copy.deepcopy(base_parameters)
+                    parameters_copy["output_dir"] = output_dir + "/round2"
+                    parameters_copy["model_name_or_path"] = model_path
+                    parameters_copy["eval_dataset"] = temp_dataset_name
+                    parameters_copy["image_resolution"] = image_resolution
+                    parameters_copy["top_k"] = k_val
+                    parameters_copy["top_p"] = p_val
+                    parameters_copy["per_device_eval_batch_size"] = 2
+                    for k,v in model_para.items():
+                        if v is not None:
+                            parameters_copy[k] = v
+                            
+                    log_file = output_dir+f"/round2/generation.log"
 
-            # evaluation
-            output_file_2r = output_dir + "/round2/generated_predictions.jsonl" 
+                    command = f"cd {LLAMA_FACTORY_PATH}; llamafactory-cli train "
+                    for k,v in parameters_copy.items():
+                        command = command + f"--{k} {v} "
+                    command = command + f" > {log_file} 2>&1"
+                    if not os.path.exists(output_dir + "/round2/generated_predictions.jsonl"):
+                        subprocess.run(command, shell=True, check=True)
+
+                # evaluation
+                output_file_2r = output_dir + "/round2/generated_predictions.jsonl" 
+            else:
+                output_file_2r = output_file_1r
+                data_2r = data_1r
+                final_answers = []
 
             with open(dataset_file, "r") as gt_data_file:
                 gt_data = json.load(gt_data_file)
@@ -437,8 +495,6 @@ if __name__ == "__main__":
                         gt_item = gt_data[question_index]
 
                         generated_item = json.loads(generated_line)
-
-                        check_question(gt_item, generated_item)
 
                         answer = generated_item["predict"]
 
@@ -451,9 +507,9 @@ if __name__ == "__main__":
                         })
 
             # evaluate the final answers
-            if dataset_name == "qspatial":
+            if "qspatial" in dataset_name:
                 final_scores = bulk_evaluate_qualitative(final_answers, gpt_evaluation_batch_size, evaluation_prompt_qualitative)
-            if dataset_name == "srgpt_qualitive":
+            elif "srgpt_qualitive" in dataset_name:
                 from build_srgpt_evalfile import build_srgpt_evalfile
                 build_srgpt_evalfile(final_answers, os.path.join(os.path.dirname(output_dir), "srgpt_eval.jsonl"))
                 continue
