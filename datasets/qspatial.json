@@ -1,0 +1,1517 @@
+[
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the base of the gooseneck kettle in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n1.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/018.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the cubic rock in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n27.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/018.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the blue cloth in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n15.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/018.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the black power bank in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n17.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/018.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the pink slipper and the TV cabinet in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n75.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/028.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffe table in front of the TV and the TV cabinet in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n40.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/028.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the three-level white plant stand and the TV cabinet in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n14.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/028.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the tissue box and the TV in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n62.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/028.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the garbage bin and the stool in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n7.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/030.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the oven mitt and the garbage bin in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n145.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/030.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the ball-like decoration and the remote controller in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n19.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/049.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the stool and the plant stand in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n25.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/019.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the switch controller and the eye drop in orange color in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n9.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/025.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the plant spray and the eye drop in orange color in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n22.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/025.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the plant spray and the ps4 under the TV in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n32.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/025.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the white plant stand and the TV cabinet in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n14.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/025.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the base of the gooseneck kettle in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n1.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/009.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the blue cloth in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n15.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/009.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the coffee grinder and the coffee serving cup in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n29.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/009.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the toothpaste and the shaving cream with a green lid in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n6.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/029.png"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the recycle bin and the sandwich board in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n44.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/002.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the recycle bin and the sandwich board in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n44.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/017.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the recycle bin and the sandwich board in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n44.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/008.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two orange chairs next to the window?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n47.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/057.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two orange chairs next to the window?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n47.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/015.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bed frame and the blue chair with a white pillow on it?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n56.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/003.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bed frame and the blue chair with a white pillow on it?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n56.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/004.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between white chair and the nearest grey sofa?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n87.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/043.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the black plate on the cabinet and the lamp on the cabinet?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n67.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/006.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the black plate on the cabinet and the lamp on the cabinet?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n67.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/031.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the black plate on the cabinet and the lamp on the cabinet?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n67.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/016.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the black plate on the cabinet and the lamp on the cabinet?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n67.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/034.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between two pillows on the sofa?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n43.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/033.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between two pillows on the sofa?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n43.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/020.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between five-tier shelf and the sofa?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n35.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/040.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the wooden table and the bed frame near the camera?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n1.2400000095367432 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/036.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the wooden table and the bed frame near the camera?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n1.2400000095367432 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/032.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the glass and the white mug in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n12.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/013.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the plastic cup and the glass in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n21.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/013.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two crayons on the table in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n16.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/037.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two stool chairs with speckled pattern in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n96.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/010.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two stool chairs with speckled pattern in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n96.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/048.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two stool chairs with speckled pattern in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n96.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/054.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two stool chairs in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n15.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/001.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two stool chairs in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n15.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/047.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two stool chairs in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n15.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/050.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the pillar and the left wall in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n161.3000030517578 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/044.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the pillar and the left wall in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n161.3000030517578 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/042.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the pillar and the left wall in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n161.3000030517578 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/005.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bollards in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n120.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/023.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bollards in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n120.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/000.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bollards in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n120.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/041.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bollards in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n120.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/026.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the bollards in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n120.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/045.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two freestanding displays in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n2.0 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/055.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two freestanding displays in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n2.0 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/012.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two freestanding displays in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n2.0 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/027.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the parking meter and parking sign post in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n142.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/021.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the parking meter and parking sign post in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n142.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/014.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two cars in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n160.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/039.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two cars in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n160.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/022.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two cars in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n160.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/046.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two cars in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n160.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/038.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two boxwoods in the black planters in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n187.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/007.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two boxwoods in the black planters in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n187.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/011.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the two traffic barrels at the front in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n2.2300000190734863 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/056.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the two traffic barrels at the front in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n2.2300000190734863 meter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/052.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the digital advertising screen and the adjacent brick column in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n27.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/035.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the digital advertising screen and the adjacent brick column in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n27.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/053.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the pillar and the window in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n157.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/051.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the pillar and the window in the image?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n157.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/024.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the two black chairs?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n62.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/058.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the two black chairs?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n62.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/059.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the two pictcures in the middle on the wall?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n22.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/060.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the two pictcures in the middle on the wall?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n22.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/061.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the yellow sign and the right pillar?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n94.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/062.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the gap between the yellow sign and the right pillar?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n94.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/063.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the width of the frame with the swing bench?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n208.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/064.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the vertical gap between the piano art and the electricity meter?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n54.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/065.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the piano art and the black barrel planter?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n54.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/066.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap in the remaining area of the bookshelf next to the last book on the left side?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n38.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/067.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap in the remaining area of the bookshelf next to the last book on the left side?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n38.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/068.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap in the remaining area of the bookshelf next to the last book on the left side?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n38.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/069.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the container and the dotted round seat on the right?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n189.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/070.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the container and the dotted round seat on the right?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n189.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/071.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the front tires of the two bikes?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n70.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/072.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the front tires of the two bikes?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n70.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/073.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the front tires of the two bikes?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n70.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/074.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the front tires of the two bikes?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n70.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/075.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the breen jar and the white pepper jar near the camera?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n16.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/076.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the nail clipper and the yellow toy?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n2.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/077.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the remaining vertical height beween the glass container and the top of the shelf?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n14.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/078.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the two tea containers?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n8.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/079.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the candle and the cologne?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n15.5 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/080.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the garbage bin and the mini-heater?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n60.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/081.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the minimum distance between the garbage bin and the mini-heater?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n60.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/082.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the luggage and the cardboard box?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n13.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/083.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the luggage and the cardboard box?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n13.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/084.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the vertical gap between the ceiling and the luggage?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n25.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/084.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the two coke cans?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n25.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/085.jpeg"
+        ]
+    },
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "<image>\nWhat is the horizontal gap between the two coke cans?Identify the regions that can help you answer the question, and then answer the question."
+            },
+            {
+                "role": "assistant",
+                "content": "Now answer the question.\n25.0 centimeter"
+            }
+        ],
+        "images": [
+            "/data/dataset-spatial-reasoning/Qspatial/QSpatial_plus/images/086.jpeg"
+        ]
+    }
+]

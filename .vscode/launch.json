@@ -1,0 +1,45 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug LLaMA-Factory Train",
+        "type": "python",
+        "request": "launch",
+        "program": "/usr/local/bin/llamafactory-cli",
+        "args": [
+          "train",
+          "--model_name_or_path", "rp-yu/Qwen2-VL-7b-VPT-CLIP",
+          "--customize_model_class", "vpt",
+          "--num_inner_forward_run", "2",
+          "--para_mask_id", "0",
+          "--para_mask_ratio", "0.0",
+          "--vision_encoder_ls", "clip",
+          "--stage", "sft",
+          "--do_predict", "True",
+          "--finetuning_type", "freefreeze",
+          "--freefreeze_frozen_modules", "all",
+          "--eval_dataset", "vpt_evaluation",
+          "--template", "qwen2_vl_vpt",
+          "--cutoff_len", "2048",
+          "--overwrite_cache", "True",
+          "--preprocessing_num_workers", "16",
+          "--output_dir", "/root/VisualPerceptionToken/evaluation/rp-yu/Qwen2-VL-7b-VPT-CLIP/VSR_region_test/p0.1_k10/round1",
+          "--overwrite_output_dir", "True",
+          "--per_device_eval_batch_size", "16",
+          "--predict_with_generate", "True",
+          "--ddp_timeout", "180000000",
+          "--image_resolution", "512",
+          "--top_k", "10",
+          "--top_p", "0.1"
+        ],
+        "console": "integratedTerminal",
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}",
+          "CUDA_VISIBLE_DEVICES": "0",
+        },
+        "cwd": "${workspaceFolder}",
+        "justMyCode": false
+      }
+    ]
+  }
+  

@@ -1,0 +1,57 @@
+### model
+model_name_or_path: Qwen/Qwen2-VL-7B-Instruct
+new_tokens: <|region_token_start|>,<|region_token_end|>,<|x_0|>,<|x_1|>,<|x_2|>,<|x_3|>,<|x_4|>,<|x_5|>,<|x_6|>,<|x_7|>,<|y_0|>,<|y_1|>,<|y_2|>,<|y_3|>,<|y_4|>,<|y_5|>,<|y_6|>,<|y_7|>
+additional_target: embed_tokens,lm_head
+resize_vocab: true
+
+### method
+stage: sft
+do_train: true
+finetuning_type: freefreeze
+freefreeze_frozen_modules: visual
+
+deepspeed: examples/deepspeed/ds_z2_config.json  # NOTE
+
+### dataset
+dataset: staug_large
+template: qwen2_vl_vpt
+
+cutoff_len: 1024
+# max_samples: 1000
+overwrite_cache: true
+preprocessing_num_workers: 64
+
+streaming: true # streaming
+buffer_size: 16384 # streaming
+preprocessing_batch_size: 1024 # streaming
+mix_strategy: interleave_under
+max_steps: 6000
+accelerator_config: # streaming
+  dispatch_batches: false # streaming
+
+### output
+output_dir: saves/staug/large
+logging_steps: 10
+save_steps: 500
+plot_loss: true
+overwrite_output_dir: true
+# save_model_only: true
+
+### train
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 8
+learning_rate: 4.0e-5
+num_train_epochs: 1.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_timeout: 180000000
+
+### eval
+val_size: 1000
+per_device_eval_batch_size: 8
+eval_strategy: steps
+eval_steps: 500
+compute_classwise_accuracy: true
+class_set: <|region_token_start|>,<|region_token_end|>,<|x_0|>,<|x_1|>,<|x_2|>,<|x_3|>,<|x_4|>,<|x_5|>,<|x_6|>,<|x_7|>,<|y_0|>,<|y_1|>,<|y_2|>,<|y_3|>,<|y_4|>,<|y_5|>,<|y_6|>,<|y_7|>,<|clip_action_start|>,<|clip_action|>,<|clip_action_end|>
+report_to: tensorboard
