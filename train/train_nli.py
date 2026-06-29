@@ -27,6 +27,17 @@ from utils import (
     get_peft_state_maybe_zero_3
 )
 
+try:
+    # 尝试添加_reconstruct和dtype，以覆盖大多数情况
+    import numpy
+    torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct, numpy.dtype])
+    torch.serialization.add_safe_globals([numpy.ndarray])
+    torch.serialization.add_safe_globals([numpy.dtypes.UInt32DType])
+    
+except AttributeError:
+    # 如果你的PyTorch版本较旧，可能没有这个函数，可以忽略
+    print("Warning: torch.serialization.add_safe_globals not found. This might be an issue on newer torch versions.")
+
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -172,12 +183,14 @@ def train():
     )
 
     hotpot_ds = HotpotQADataset()
-    msmarco_ds = MSMarcoDataset(max_length=100000)
+    msmarco_ds = MSMarcoDataset()
     train_dataset = torch.utils.data.ConcatDataset([nil_ds, hotpot_ds, msmarco_ds])
     
     eval_dataset = None
     training_args.eval_strategy = "no"
-
+    training_args.save_strategy = "steps"
+    training_args.save_steps = 500
+    training_args.save_total_limit = 1
     # data collator
     data_collator = COLLATORS[model_args.model_family_id](
         tokenizer=tokenizer,

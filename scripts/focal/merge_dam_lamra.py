@@ -19,17 +19,39 @@ from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
 import torch
 import copy
 
-# generate pretrain weights for mbeir finetuning
-save_dir = "./tmp_ckpts/qwen2-2b_DAM_cpenc_subnil"
-lamra_model = "../dam-qwen2/checkpoints/qwen2-vl-2b_temp0.07_stagel1-5"
-# vision_backbone = "checkpoints/qwen2-vl-2b_DAM_cp"
-vision_backbone = "checkpoints/qwen2-vl-2b_DAM_cp_enc/checkpoint-500"
+# save_dir = "./checkpoints/LamRA-Ret-2b-tune+cplessvit"
+# lamra_model = "../dam-qwen2/checkpoints/LamRA-Ret-2b-tune/"
+# vision_backbone = "checkpoints/qwen2-vl-2b_DAM_cp/checkpoint-500"
+
+# 这个只训了500e
+# save_dir = "./tmp_ckpts/Lemuir-Pretrained-merged+cplessvit"
+# lamra_model = "../dam-qwen2/checkpoints/LamRA-Ret-2b-Pretrained-merged"
+# vision_backbone = "checkpoints/qwen2-vl-2b_DAM_cp/checkpoint-500"
 
 # generate ctx only
 # save_dir = "./tmp_ckpts/dam_pretrain+lamrallm"
 # lamra_model = "./checkpoints/tempckpt"
 # vision_backbone = "./checkpoints/qwen2_5-vl-7b_DAM_pretrain_vision"
 
+
+# final version
+save_dir = "checkpoints/Lemur_7B_Pretrain_585ktxt_nocausal_enc"
+lamra_model = "tmp_ckpts/qwen2-vl-7b_Lemur_Pretrain_585ktxt_nocausal_stage1-5"
+vision_backbone = "checkpoints/qwen2-vl-7b_DAM_cp_final_enc"
+
+
+# final version
+# 用的epoch是全部训练完的，6000～7000个step
+save_dir = "checkpoints/Lemur_7B_Pretrain_585ktxt_final"
+lamra_model = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc"
+vision_backbone = "checkpoints/qwen2-vl-7b_DAM_cp_final"
+
+save_dir = "./checkpoints/lemur-2b_zeroshot"
+lamra_model = "../dam-qwen2/checkpoints/LamRA-Ret-2b-tune"
+vision_backbone = "checkpoints/qwen2-vl-2b_DAM_cp_testpam"
+
+base_model = Qwen2VLRetForConditionalGeneration.from_pretrained(vision_backbone,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+lamra_ret = Qwen2VLRetForConditionalGeneration.from_pretrained(lamra_model,low_cpu_mem_usage=False,  attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
 
 save_dir = "checkpoints/Lemur_7B_Pretrain_585ktxt_final"
 lamra_model = "checkpoints/Lemur_7B_Pretrain_585ktxt_enc"

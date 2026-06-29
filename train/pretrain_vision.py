@@ -26,6 +26,7 @@ from dataset.datasets_mbeir import LazySupervisedDataset, MbeirLanguageDataset
 from dataset.dataset_fgclip import FGCLIPDataset
 from dataset.datasets_lemur import XHSDataset
 from dataset.datasets_dam import DAMDataset
+from dataset.datasets_pam import PAMDataset
 from dataset.datasets_llavacc3m import LLavaCC3MDataset
 # from dataset.datasets_mmeb import MMEBDataset
 from loaders import LOADERS
@@ -124,15 +125,28 @@ def train():
     rank0_print("Loading data...")
     dam_dataset = DAMDataset(
         data_path=data_args.dam_data_path,
-        max_length=data_args.dam_max_samples,
+        max_length=108000,
         mode = 'crop',
     )
+
+    pam_dataset = PAMDataset(
+        data_path="/mnt/tidal-alsh01/dataset/mmeb/PAM-data/image-obj-caption/PamCOCO.jsonl",
+        max_length=108000,
+        mode = 'crop',
+    )
+    #     dam_dataset = DAMDataset(
+    #     data_path=data_args.dam_data_path,
+    #     max_length=300000,
+    #     mode = 'crop',
+    # )
     # fgclip_dataset = FGCLIPDataset(
     #     data_path=data_args.fgclip_data_path,
-    #     max_length=50000,
-    #     use_bbox_ratio=data_args.fgclip_use_bbox_ratio,
+    #     max_length=100000,
+    #     use_bbox_ratio=0.0,#data_args.fgclip_use_bbox_ratio,
     #     # text_truncate_length=350
     # )
+    # 以上是复现的
+
     # mbeir_language_dataset = MbeirLanguageDataset(
     #     query_data_path="/mnt/tidal-alsh01/dataset/mmeb/M-BEIR/query/union_train/mbeir_language_train200k.jsonl",
     #     cand_pool_path=data_args.cand_pool_path,
@@ -159,6 +173,7 @@ def train():
     #     mode=data_args.mmeb_mode,
     #     max_samples=data_args.mmeb_max_samples
     # )
+    train_dataset = torch.utils.data.ConcatDataset([dam_dataset, pam_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([fgclip_dataset, dam_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_language_dataset, llavacc3m_dataset, dam_dataset])
     # train_dataset = torch.utils.data.ConcatDataset([mbeir_dataset, xhs_dataset, dam_dataset, mbeir_language_dataset])
@@ -175,14 +190,15 @@ def train():
     )
     training_args.save_strategy = "steps"
     training_args.save_steps = 1000
-    training_args.save_total_limit = 1
+    training_args.save_total_limit = 7
     
     # training_args.gradient_checkpointing_kwargs = {"use_reentrant": False} # add this one 
-    trainer = Trainer(
+    trainer = CustomTrainer(
         model=model,
         args=training_args,
         data_collator=data_collator,
-        train_dataset=dam_dataset,
+        train_dataset=train_dataset,
+        language_ds_startidx=1
     )
     
     trainer.train()

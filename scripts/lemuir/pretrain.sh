@@ -1,3 +1,4 @@
+PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 NUM_GPUS=8
 DISTRIBUTED_ARGS="
     --nnodes=1 \
@@ -19,9 +20,9 @@ Q_LORA=False
 LORA_R=64                                               
 LORA_ALPHA=128                                           
 
-RUN_ID=${1:-${MODEL_ID}_LEMUIR_Pretrain-Qwen2VL}
+RUN_ID=${1:-${MODEL_ID}_Lemur_Pretrain_585ktxt_nocausal}
 
-DS_STAGE=zero2                                       
+DS_STAGE=zero2               
 PER_DEVICE_BATCH_SIZE=72                               
 GRAD_ACCUM=1                                           
 NUM_EPOCHS=2                                            
@@ -66,4 +67,5 @@ torchrun $DISTRIBUTED_ARGS train/train_nli.py \
     --lora_r $LORA_R \
     --lora_alpha $LORA_ALPHA \
     --use_flash_attn True \
+    --nocausal_attn \
     $@

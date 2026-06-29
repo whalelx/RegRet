@@ -5,17 +5,24 @@ from transformers import AutoTokenizer, AutoProcessor, AutoModelForCausalLM
 from . import register_loader
 from .base import BaseModelLoader
 from models.qwen2_vl import Qwen2VLRetForConditionalGeneration
+from models.qwen2_vl_finetune import Qwen2VLRetFinetuneForConditionalGeneration
+
 from .processor import LemuirProcessor
 
 @register_loader("qwen2-vl-2b")
 class Qwen2VL2BModelLoader(BaseModelLoader):
     def load(self, load_model: bool = True, pretrain=False) -> Tuple[AutoModelForCausalLM, AutoTokenizer, None]:
         if load_model:
-            model = Qwen2VLRetForConditionalGeneration.from_pretrained(
-                self.model_local_path, 
-                **self.loading_kwargs,
-            ) 
-
+            if not pretrain:
+                model = Qwen2VLRetForConditionalGeneration.from_pretrained(
+                    self.model_local_path, 
+                    **self.loading_kwargs,
+                ) 
+            else:
+                model = Qwen2VLRetFinetuneForConditionalGeneration.from_pretrained(
+                    self.model_local_path, 
+                    **self.loading_kwargs,
+                ) 
         processor = LemuirProcessor.from_pretrained(self.model_local_path)
         tokenizer = processor.tokenizer 
 

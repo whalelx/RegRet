@@ -26,6 +26,7 @@ class MSMarcoDataset(Dataset):
         return len(self.dataset)
 
     def construct_messages(self, text):
+        text = text[:1024]
         message = [
             {
                 "role": "user",
